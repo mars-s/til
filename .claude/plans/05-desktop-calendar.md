@@ -1,36 +1,36 @@
 # Phase 5 — Desktop App: Calendar Tab
 
 ## Goal
-Week and month calendar views in the GPUI desktop app. Local events only; Google sync in Phase 7.
+Week and month calendar views in the Tauri 2.0 desktop app. Web UI built with React. Local events only; Google sync in Phase 7.
 
 ## Views
 
-### WeekView (`src/views/calendar/week.rs`)
-- 7-column horizontal grid, 24 rows (hours)
+### WeekView (`src/views/calendar/Week.tsx`)
+- 7-column horizontal grid, 24 rows (hours) with CSS Grid/Flexbox
 - Trackpad horizontal scroll between weeks
 - Events rendered as coloured blocks
 - **Dashed outline** for `is_suggestion = true` events
 - Click on time slot → open NLP event creation input (same engine as tasks)
 - `1–7` keys → jump focus to day column
 
-### MonthView (`src/views/calendar/month.rs`)
+### MonthView (`src/views/calendar/Month.tsx`)
 - Standard month grid
 - Shows event dots / short titles
 - Click day → expand week view at that week
 
-### EventBlock (`src/views/calendar/event.rs`)
-```rust
-pub struct EventBlock {
-    pub event: CalendarEvent,
-    pub style: EventStyle,      // Solid | Dashed (suggestion)
-    pub is_focused: bool,
+### EventBlock (`src/components/EventBlock.tsx`)
+```tsx
+interface EventBlockProps {
+    event: CalendarEvent;
+    isSuggestion: boolean;   // Dashed (suggestion) vs Solid
+    isFocused: boolean;
 }
 ```
 - Solid: confirmed event
 - Dashed / ghost: `is_suggestion = true` — clicking commits it (Phase 10)
 
 ## NLP Event Input
-Same input component as tasks but uses `til_core::nlp::calendar::parse()`.
+Same input component as tasks but calls Tauri command `invoke('parse_calendar', { input })` using `til_core::nlp::calendar::parse()`.
 Inline span highlights for time, date, recurrence patterns.
 
 ## Keybinds
@@ -41,20 +41,14 @@ Inline span highlights for time, date, recurrence patterns.
 - `←` / `→` → previous / next week (or month)
 - `cmd+k` → command palette (Phase 8)
 
-## State additions to AppModel
-```rust
-pub struct AppModel {
-    // ... existing fields
-    pub calendar_view: CalendarView,   // Week | Month
-    pub week_offset: i32,              // 0 = current week
-    pub focused_day: Option<NaiveDate>,
-}
-
-pub enum CalendarView { Week, Month }
+## State additions to Backend/Frontend
+```tsx
+const [calendarView, setCalendarView] = useState<'Week' | 'Month'>('Week');
+const [weekOffset, setWeekOffset] = useState(0); // 0 = current week
 ```
 
 ## Horizontal scroll
-GPUI scroll handling on the week grid — `ScrollHandle` on the time axis, week navigation updates `week_offset`.
+Utilize native web CSS overflow-x scrolling on the week grid container, snapping or triggering navigation on edges.
 
 ## Milestone
-`cargo run -p desktop`, press Tab → Calendar tab. Can create events via NLP input. Week/month toggle works. Dashed suggestion blocks render correctly.
+`npm run tauri dev`, switch to Calendar tab. Can create events via NLP input. Week/month toggle works. Dashed suggestion blocks render correctly.

@@ -1,7 +1,10 @@
 # Til — Master Implementation Plan
 
 ## What we're building
-A cross-platform productivity app: Things 3-style tasks + Google Calendar, with NLP input, smart scheduling, and real-time sync. Desktop = GPUI (Rust/macOS). Mobile = Expo/iOS. Shared logic = `til-core` Rust crate (compiles to native + WASM).
+A cross-platform productivity app: Things 3-style tasks + Google Calendar, with NLP input, smart scheduling, and real-time sync. 
+Desktop = Tauri 2.0 (React/TS + Tailwind UI, Rust backend). 
+Mobile = Expo/iOS. 
+Shared logic = `til-core` Rust crate (used natively in Tauri, WASM in Mobile).
 
 ## Phase Order
 
@@ -50,7 +53,7 @@ ANTHROPIC_API_KEY=<for smart-schedule edge function>
 ```
 til/
 ├── apps/
-│   ├── desktop/           # GPUI Rust
+│   ├── desktop/           # Tauri 2.0 (React + Rust)
 │   └── mobile/            # Expo + React Native
 ├── packages/
 │   ├── til-core/          # Shared Rust logic

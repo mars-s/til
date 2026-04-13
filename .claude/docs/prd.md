@@ -5,7 +5,7 @@
 ```
 til/
 ├── apps/
-│   ├── desktop/                    # GPUI Rust — macOS
+│   ├── desktop/                    # Tauri 2.0 (React + Rust) — macOS/Windows/Linux
 │   └── mobile/                     # Expo + React Native — iOS
 ├── packages/
 │   ├── til-core/                   # Shared Rust logic (WASM compilable)
@@ -40,7 +40,7 @@ til/
             ┌────────────┴────────────┐
             ▼                        ▼
    ┌────────────────┐      ┌──────────────────────┐
-   │  GPUI Desktop  │      │  Expo Mobile (RN)    │
+   │ Tauri Desktop  │      │  Expo Mobile (RN)    │
    │                │      │                      │
    │  Tasks tab     │      │  Tasks screen        │
    │  Calendar tab  │      │  Calendar screen     │
@@ -165,41 +165,37 @@ are easy to extend without recompiling.
 
 ---
 
-## Desktop App — GPUI Architecture
+## Desktop App — Tauri 2.0 Architecture
 
 ```
 apps/desktop/
+├── src-tauri/
+│   ├── src/
+│   │   ├── main.rs         # Entry point, Tauri setup
+│   │   ├── commands.rs     # Tauri IPC commands wrapping til-core
+│   │   ├── state.rs        # Managed backend state (Mutex)
+│   │   └── sync/           # Supabase push/pull
+│   └── Cargo.toml
 ├── src/
-│   ├── main.rs
-│   ├── app.rs              # AppState, global keybinds
+│   ├── main.tsx            # React entry
+│   ├── App.tsx             # Root Layout (Tabs, CmdK provider)
+│   ├── components/         # Reusable UI (TaskRow, Input, etc)
 │   ├── views/
-│   │   ├── root.rs         # Tab switcher (Tasks / Calendar)
-│   │   ├── tasks/
-│   │   │   ├── list.rs     # Things 3-style list
-│   │   │   ├── task_row.rs # Expandable row, long-press tick
-│   │   │   └── input.rs    # NLP-aware input with span highlights
-│   │   ├── calendar/
-│   │   │   ├── week.rs     # Horizontal scroll grid
-│   │   │   ├── month.rs    # M key toggle
-│   │   │   └── event.rs    # Event block (solid / dashed suggestion)
-│   │   └── command_palette/
-│   │       └── mod.rs      # cmd+k
-│   ├── sync/
-│   │   └── supabase.rs     # Realtime subscription + REST
-│   └── state/
-│       └── store.rs        # Single AppModel, action dispatch
+│   │   ├── Tasks.tsx       # Things 3 style tasks
+│   │   └── Calendar.tsx    # Week/Month grid views
+│   └── lib/                # tauri invoke wrappers, hooks
+├── package.json
+└── tailwind.config.js      # Styling framework
 ```
 
 ### Key Interactions
-- `cmd+k` → command palette (create task, create event, navigate, bind calendar)
-- `w` → toggle week view, `m` → month view
-- `1–7` → jump to day column in week view
-- Long-hold on task tick → sets `in_progress` with animation
-- Trackpad horizontal scroll on calendar grid — native GPUI scroll handling
+- `cmd+k` → React command palette (`cmdk`) via global window events (create task, create event, navigate, bind calendar)
+- `w` / `m` → toggle week / month view
+- native trackpad scrolling on calendar via css overflow
+- Backend performs heavy lifting and DB/syncing, Frontend strictly handles view logic and calls `invoke()`.
 
 ### Theming
-GPUI uses a token-based design system. Define a `TilTheme` struct with the colour
-palette and pass it down via `cx.global()`. Mirror the same tokens in the RN app.
+Tailwind CSS provides the design tokens. Define colors and font variables in `index.css` and use standard functional utility classes in React components.
 
 ---
 
@@ -297,8 +293,7 @@ it (solid block + creates Google Cal event).
 - **Declarative NLP rules in TOML** — describe a new pattern, AI generates the rule
 - **Supabase types auto-generated** — `supabase gen types typescript` keeps
   `til-types` in sync; AI always has accurate schema context
-- **Single AppModel in desktop** — one file describes all state, easy to paste
-  into context
+- **React Frontend / Tauri Backend split** — frontend UI updates easily driven by AI and decoupled from DB logic.
 - **Edge functions are small and isolated** — each is a standalone Deno function,
   trivial to hand to AI for modification
 
@@ -308,7 +303,7 @@ it (solid block + creates Google Cal event).
 
 | Layer | Tech |
 |---|---|
-| Desktop | GPUI (Rust) — macOS |
+| Desktop | Tauri 2.0 (React/TypeScript UI + Rust Backend) |
 | Mobile | Expo + React Native — iOS |
 | Shared logic | til-core (Rust → native + WASM) |
 | Backend | Supabase (Auth, Postgres, Realtime, Edge Functions) |
@@ -324,11 +319,11 @@ it (solid block + creates Google Cal event).
 1. **Scaffold monorepo** — Cargo workspace, npm workspaces, Supabase project init
 2. **til-core NLP** — task parser with span highlighting, TOML rules, unit tests
 3. **Supabase schema** — migrations, RLS policies, type generation
-4. **Desktop tasks tab** — Things 3-style list, NLP input, local state only
+4. **Desktop tasks tab** — React UI, Tauri Commands, Local state
 5. **Desktop calendar tab** — week grid, keybinds, horizontal scroll
 6. **Auth + Google OAuth** — Supabase auth, token storage, "Til" calendar creation
 7. **Sync layer** — webhook edge function, Realtime subscriptions, bidirectional sync
-8. **cmd+k command palette** — global keybind, all actions wired
+8. **cmd+k command palette** — global shortcut via `cmdk`, all actions wired
 9. **Mobile app** — Expo scaffold, reuse til-core WASM, Liquid Glass UI
 10. **Smart scheduler** — local heuristic first, then AI edge function, dashed
     suggestion blocks in calendar
