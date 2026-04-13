@@ -28,9 +28,13 @@ export async function fetchTasks(): Promise<Task[]> {
 
 export async function insertTask(task: Omit<Task, 'id'>): Promise<Task> {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('tasks')
     .insert({
+      user_id: user.id,
       title: task.title,
       status:
         task.status === 'Todo'

@@ -43,6 +43,21 @@ export function useAuth() {
             refreshToken: data.session.refresh_token,
           });
           setSession(data.session);
+          
+          if (data.session.provider_token) {
+            console.log('[oauth] setting up google calendar with edge function...');
+            const { error: setupError } = await supabase.functions.invoke('google-calendar-setup', {
+              body: {
+                provider_token: data.session.provider_token,
+                provider_refresh_token: data.session.provider_refresh_token,
+              }
+            });
+            if (setupError) {
+              console.error('[oauth] edge function error:', setupError);
+            } else {
+              console.log('[oauth] edge function setup complete.');
+            }
+          }
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : JSON.stringify(e);

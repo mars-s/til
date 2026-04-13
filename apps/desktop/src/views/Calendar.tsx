@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import WeekView from "./calendar/Week";
 import MonthView from "./calendar/Month";
 import CalendarSidebar from "../components/CalendarSidebar";
-import { getEvents, type CalendarEvent, type Task } from "../lib/invoke";
-import { fetchTasks } from "../lib/db";
+import { type CalendarEvent, type Task } from "../lib/invoke";
+import { fetchTasks, fetchEvents } from "../lib/db";
 
 type CalView = "week" | "month";
 
@@ -19,7 +19,7 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
 
   useEffect(() => {
     Promise.all([
-      getEvents(),
+      fetchEvents(),
       fetchTasks(),
     ])
       .then(([evs, tsks]) => {
