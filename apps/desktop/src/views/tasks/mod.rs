@@ -36,10 +36,8 @@ impl TasksView {
 impl Render for TasksView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = self.theme.clone();
-        let state_ref = self.state.read(cx);
-        let draft = state_ref.input_draft.clone();
-        let tasks = state_ref.tasks.clone();
-        drop(state_ref);
+        let draft = self.state.read(cx).input_draft.clone();
+        let tasks = self.state.read(cx).tasks.clone();
 
         // Parse current draft for preview
         let preview: Option<String> = if draft.is_empty() {

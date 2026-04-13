@@ -1,5 +1,6 @@
+use gpui::prelude::*;
 use gpui::*;
-use crate::state::{AppState, Tab};
+use crate::state::AppState;
 use crate::theme::TilTheme;
 
 pub struct CommandPalette {
@@ -9,23 +10,25 @@ pub struct CommandPalette {
 }
 
 #[derive(Clone)]
-struct Command {
+struct PaletteCommand {
     label: &'static str,
-    action: CommandAction,
+    #[allow(dead_code)]
+    action: PaletteAction,
 }
 
 #[derive(Clone)]
-enum CommandAction {
+#[allow(dead_code)]
+enum PaletteAction {
     GoToTasks,
     GoToCalendar,
     NewTask,
 }
 
-fn all_commands() -> Vec<Command> {
+fn all_commands() -> Vec<PaletteCommand> {
     vec![
-        Command { label: "New Task", action: CommandAction::NewTask },
-        Command { label: "Go to Tasks", action: CommandAction::GoToTasks },
-        Command { label: "Go to Calendar", action: CommandAction::GoToCalendar },
+        PaletteCommand { label: "New Task", action: PaletteAction::NewTask },
+        PaletteCommand { label: "Go to Tasks", action: PaletteAction::GoToTasks },
+        PaletteCommand { label: "Go to Calendar", action: PaletteAction::GoToCalendar },
     ]
 }
 
@@ -34,24 +37,12 @@ impl CommandPalette {
         Self { state, theme, selected_index: 0 }
     }
 
-    fn filtered_commands(&self, cx: &App) -> Vec<Command> {
+    fn filtered_commands(&self, cx: &App) -> Vec<PaletteCommand> {
         let query = self.state.read(cx).command_palette_query.to_lowercase();
         all_commands()
             .into_iter()
             .filter(|c| query.is_empty() || c.label.to_lowercase().contains(&query))
             .collect()
-    }
-
-    fn execute_command(&mut self, cmd: &Command, cx: &mut Context<Self>) {
-        self.state.update(cx, |state, _| {
-            match cmd.action {
-                CommandAction::GoToTasks => state.set_tab(Tab::Tasks),
-                CommandAction::GoToCalendar => state.set_tab(Tab::Calendar),
-                CommandAction::NewTask => state.set_tab(Tab::Tasks),
-            }
-            state.close_command_palette();
-        });
-        cx.notify();
     }
 }
 
@@ -62,14 +53,14 @@ impl Render for CommandPalette {
         let query = self.state.read(cx).command_palette_query.clone();
         let selected = self.selected_index.min(commands.len().saturating_sub(1));
 
-        // Overlay container
+        // Overlay
         div()
             .absolute()
             .inset_0()
             .flex()
             .items_center()
             .justify_center()
-            .bg(gpui::hsla(0.0, 0.0, 0.0, 0.6))
+            .bg(hsla(0.0, 0.0, 0.0, 0.6))
             .child(
                 div()
                     .w(px(560.0))
@@ -80,7 +71,7 @@ impl Render for CommandPalette {
                     .shadow_lg()
                     .overflow_hidden()
                     .child(
-                        // Search input area
+                        // Search input
                         div()
                             .px(px(16.0))
                             .py(px(12.0))
@@ -98,7 +89,11 @@ impl Render for CommandPalette {
                             .child(
                                 div()
                                     .flex_1()
-                                    .text_color(if query.is_empty() { theme.text_secondary.clone() } else { theme.text_primary.clone() })
+                                    .text_color(if query.is_empty() {
+                                        theme.text_secondary.clone()
+                                    } else {
+                                        theme.text_primary.clone()
+                                    })
                                     .text_base()
                                     .child(if query.is_empty() {
                                         SharedString::from("Type a command...")
@@ -117,6 +112,17 @@ impl Render for CommandPalette {
                                 commands.iter().enumerate().map(|(i, cmd)| {
                                     let is_selected = i == selected;
                                     let label = SharedString::from(cmd.label);
+                                    let row_bg = if is_selected {
+                                        theme.surface2.clone()
+                                    } else {
+                                        theme.surface.clone()
+                                    };
+                                    let icon_color = if is_selected {
+                                        theme.accent.clone()
+                                    } else {
+                                        theme.text_secondary.clone()
+                                    };
+
                                     div()
                                         .px(px(16.0))
                                         .py(px(10.0))
@@ -125,10 +131,10 @@ impl Render for CommandPalette {
                                         .gap(px(8.0))
                                         .rounded(px(4.0))
                                         .mx(px(4.0))
-                                        .bg(if is_selected { theme.surface2.clone() } else { theme.surface.clone() })
+                                        .bg(row_bg)
                                         .child(
                                             div()
-                                                .text_color(if is_selected { theme.text_primary.clone() } else { theme.text_secondary.clone() })
+                                                .text_color(icon_color)
                                                 .text_sm()
                                                 .child("→")
                                         )
@@ -142,7 +148,7 @@ impl Render for CommandPalette {
                             )
                     )
                     .child(
-                        // Footer hint
+                        // Footer hints
                         div()
                             .px(px(16.0))
                             .py(px(8.0))

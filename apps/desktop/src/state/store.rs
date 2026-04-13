@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use til_core::types::{ParsedTask, Priority};
 
 #[derive(Debug, Clone, PartialEq)]

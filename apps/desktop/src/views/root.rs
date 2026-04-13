@@ -1,3 +1,4 @@
+use gpui::prelude::*;
 use gpui::*;
 use crate::state::{AppState, Tab};
 use crate::theme::TilTheme;
@@ -34,13 +35,15 @@ impl Render for RootView {
         let active_tab = self.state.read(cx).active_tab.clone();
         let palette_open = self.state.read(cx).command_palette_open;
 
+        let tasks_active = active_tab == Tab::Tasks;
+        let calendar_active = active_tab == Tab::Calendar;
+
         div()
             .relative()
             .flex()
             .flex_col()
             .size_full()
             .bg(theme.bg)
-            .font_family("Berkeley Mono")
             .child(
                 // Tab bar
                 div()
@@ -72,10 +75,18 @@ impl Render for RootView {
                             .px(px(14.0))
                             .py(px(6.0))
                             .rounded(px(6.0))
-                            .bg(if active_tab == Tab::Tasks { theme.surface2.clone() } else { Hsla::default() })
-                            .text_color(if active_tab == Tab::Tasks { theme.text_primary.clone() } else { theme.text_secondary.clone() })
+                            .when(tasks_active, |el| el.bg(theme.surface2))
+                            .text_color(if tasks_active {
+                                theme.text_primary.clone()
+                            } else {
+                                theme.text_secondary.clone()
+                            })
                             .text_sm()
-                            .font_weight(if active_tab == Tab::Tasks { FontWeight::SEMIBOLD } else { FontWeight::NORMAL })
+                            .font_weight(if tasks_active {
+                                FontWeight::SEMIBOLD
+                            } else {
+                                FontWeight::NORMAL
+                            })
                             .child("Tasks")
                     )
                     .child(
@@ -84,10 +95,18 @@ impl Render for RootView {
                             .px(px(14.0))
                             .py(px(6.0))
                             .rounded(px(6.0))
-                            .bg(if active_tab == Tab::Calendar { theme.surface2.clone() } else { Hsla::default() })
-                            .text_color(if active_tab == Tab::Calendar { theme.text_primary.clone() } else { theme.text_secondary.clone() })
+                            .when(calendar_active, |el| el.bg(theme.surface2))
+                            .text_color(if calendar_active {
+                                theme.text_primary.clone()
+                            } else {
+                                theme.text_secondary.clone()
+                            })
                             .text_sm()
-                            .font_weight(if active_tab == Tab::Calendar { FontWeight::SEMIBOLD } else { FontWeight::NORMAL })
+                            .font_weight(if calendar_active {
+                                FontWeight::SEMIBOLD
+                            } else {
+                                FontWeight::NORMAL
+                            })
                             .child("Calendar")
                     )
                     .child(
@@ -120,10 +139,10 @@ impl Render for RootView {
                     .flex()
                     .flex_1()
                     .overflow_hidden()
-                    .when(active_tab == Tab::Tasks, |el| {
+                    .when(tasks_active, |el| {
                         el.child(self.tasks_view.clone())
                     })
-                    .when(active_tab == Tab::Calendar, |el| {
+                    .when(calendar_active, |el| {
                         el.child(self.calendar_view.clone())
                     })
             )
