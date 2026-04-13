@@ -1,0 +1,23 @@
+[package]
+name = "desktop"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "til"
+path = "src/main.rs"
+
+[dependencies]
+til-core = { path = "../../packages/til-core" }
+til-sync = { path = "../../packages/til-sync" }
+gpui = { git = "https://github.com/zed-industries/zed", package = "gpui" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = "0.3"
+uuid = { workspace = true }
+chrono = { workspace = true }
+keyring = "2"

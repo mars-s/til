@@ -1,0 +1,62 @@
+[[rules]]
+name = "time_at"
+pattern = "(?i)\\bat\\s+(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)"
+sets = "scheduled_at"
+span_kind = "Time"
+
+[[rules]]
+name = "deadline_by"
+pattern = "(?i)\\bby\\s+((?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|today|tomorrow|next\\s+\\w+)(?:\\s+\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)?)"
+sets = "deadline_at"
+span_kind = "Date"
+
+[[rules]]
+name = "duration_for"
+pattern = "(?i)\\bfor\\s+(\\d+)\\s*(min(?:utes?)?|h(?:ours?)?|hr?s?)"
+sets = "duration_minutes"
+span_kind = "Duration"
+
+[[rules]]
+name = "date_tomorrow"
+pattern = "(?i)\\btomorrow\\b"
+sets = "scheduled_at_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_today"
+pattern = "(?i)\\btoday\\b"
+sets = "scheduled_at_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_next_weekday"
+pattern = "(?i)\\bnext\\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b"
+sets = "scheduled_at_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_this_weekday"
+pattern = "(?i)\\b(this\\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b"
+sets = "scheduled_at_date"
+span_kind = "Date"
+
+[[rules]]
+name = "priority_urgent"
+pattern = "(?i)\\b(urgent|asap|critical)\\b"
+sets = "priority"
+value = "urgent"
+span_kind = "Priority"
+
+[[rules]]
+name = "priority_high"
+pattern = "(?i)\\b(high(?:\\s+priority)?|priority\\s+high)\\b"
+sets = "priority"
+value = "high"
+span_kind = "Priority"
+
+[[rules]]
+name = "priority_low"
+pattern = "(?i)\\b(low(?:\\s+priority)?|priority\\s+low)\\b"
+sets = "priority"
+value = "low"
+span_kind = "Priority"

@@ -1,0 +1,68 @@
+[[rules]]
+name = "time_range"
+pattern = "(?i)(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)\\s*(?:to|-)\\s*(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)"
+sets = "time_range"
+span_kind = "Time"
+
+[[rules]]
+name = "time_at"
+pattern = "(?i)\\bat\\s+(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)"
+sets = "start_at"
+span_kind = "Time"
+
+[[rules]]
+name = "date_next_weekday"
+pattern = "(?i)\\bnext\\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b"
+sets = "start_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_this_weekday"
+pattern = "(?i)\\b(this\\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b"
+sets = "start_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_tomorrow"
+pattern = "(?i)\\btomorrow\\b"
+sets = "start_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_today"
+pattern = "(?i)\\btoday\\b"
+sets = "start_date"
+span_kind = "Date"
+
+[[rules]]
+name = "recurrence_every_weekday"
+pattern = "(?i)\\bevery\\s+weekday\\b"
+sets = "rrule"
+value = "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+span_kind = "Recurrence"
+
+[[rules]]
+name = "recurrence_every_day"
+pattern = "(?i)\\b(every\\s+day|daily)\\b"
+sets = "rrule"
+value = "RRULE:FREQ=DAILY"
+span_kind = "Recurrence"
+
+[[rules]]
+name = "recurrence_every_week"
+pattern = "(?i)\\bevery\\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b"
+sets = "rrule"
+span_kind = "Recurrence"
+
+[[rules]]
+name = "recurrence_weekly"
+pattern = "(?i)\\bweekly\\b"
+sets = "rrule"
+value = "RRULE:FREQ=WEEKLY"
+span_kind = "Recurrence"
+
+[[rules]]
+name = "duration_for"
+pattern = "(?i)\\bfor\\s+(\\d+)\\s*(min(?:utes?)?|h(?:ours?)?|hr?s?)"
+sets = "duration_minutes"
+span_kind = "Duration"

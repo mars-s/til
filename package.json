@@ -1,0 +1,13 @@
+{
+  "name": "til-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "packages/til-types"
+  ],
+  "scripts": {
+    "mobile": "npm run --workspace=apps/mobile start",
+    "build:wasm": "wasm-pack build packages/til-core --target web --out-dir ../../apps/mobile/lib/til-core"
+  }
+}
