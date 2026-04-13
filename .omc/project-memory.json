@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776084286490,
+  "projectRoot": "/Users/avi/Developer/rust/testing/til",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "Rust",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Cargo.toml"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "cargo",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cargo build",
+    "testCommand": "cargo test",
+    "lintCommand": "cargo clippy",
+    "devCommand": "cargo run",
+    "scripts": {
+      "mobile": "npm run --workspace=apps/mobile start",
+      "build:wasm": "wasm-pack build packages/til-core --target web --out-dir ../../apps/mobile/lib/til-core"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "apps/mobile",
+      "packages/til-types"
+    ],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "apps": {
+      "path": "apps",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776084286479,
+      "keyFiles": []
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776084286479,
+      "keyFiles": []
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1776084286481,
+      "keyFiles": [
+        "main.rs"
+      ]
+    },
+    "supabase": {
+      "path": "supabase",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1776084286481,
+      "keyFiles": [
+        "config.toml",
+        "run_migrations.sql",
+        "seed.sql"
+      ]
+    },
+    "target": {
+      "path": "target",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1776084286481,
+      "keyFiles": [
+        "CACHEDIR.TAG"
+      ]
+    },
+    "supabase/migrations": {
+      "path": "supabase/migrations",
+      "purpose": "Database migrations",
+      "fileCount": 5,
+      "lastAccessed": 1776084286482,
+      "keyFiles": [
+        "20260413000001_initial_schema.sql",
+        "20260413000002_rls_policies.sql",
+        "20260413000003_realtime.sql"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}
