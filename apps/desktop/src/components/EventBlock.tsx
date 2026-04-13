@@ -3,56 +3,10 @@ import { type CalendarEvent } from "../lib/invoke";
 
 interface EventBlockProps {
   event: CalendarEvent;
-  /** Height in pixels (calculated by caller from duration) */
   height: number;
-  /** Top offset in pixels (calculated by caller from start time) */
   top: number;
-  /** Width/left are managed by the column layout in the parent */
   style?: React.CSSProperties;
   onClick?: (event: CalendarEvent) => void;
-}
-
-export default function EventBlock({
-  event,
-  height,
-  top,
-  style,
-  onClick,
-}: EventBlockProps) {
-  const color = event.color ?? "var(--accent)";
-  const isSuggestion = event.is_suggestion;
-
-  return (
-    <div
-      className="absolute left-0 right-1 rounded overflow-hidden cursor-pointer text-xs select-none"
-      style={{
-        top,
-        height: Math.max(height, 20),
-        background: isSuggestion ? "transparent" : `${color}33`,
-        border: isSuggestion ? `2px dashed ${color}` : `1px solid ${color}`,
-        color,
-        padding: "2px 6px",
-        ...style,
-      }}
-      onClick={() => onClick?.(event)}
-      title={event.title}
-    >
-      <div className="font-medium truncate leading-4">{event.title}</div>
-      {height >= 32 && (
-        <div className="opacity-70 truncate" style={{ fontSize: "10px" }}>
-          {formatTime(event.start_at)} – {formatTime(event.end_at)}
-        </div>
-      )}
-      {isSuggestion && height >= 20 && (
-        <div
-          className="absolute top-0.5 right-1 text-xs opacity-60"
-          style={{ fontSize: "9px" }}
-        >
-          suggest
-        </div>
-      )}
-    </div>
-  );
 }
 
 function formatTime(iso: string): string {
@@ -64,4 +18,94 @@ function formatTime(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+export default function EventBlock({
+  event,
+  height,
+  top,
+  style,
+  onClick,
+}: EventBlockProps) {
+  const color = event.color ?? "var(--sky)";
+  const isSuggestion = event.is_suggestion;
+  const h = Math.max(height, 20);
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 2,
+        right: 3,
+        top,
+        height: h,
+        borderRadius: 6,
+        overflow: "hidden",
+        cursor: "pointer",
+        userSelect: "none",
+        background: isSuggestion ? "transparent" : `${color}28`,
+        border: isSuggestion ? `1.5px dashed ${color}` : `1px solid ${color}55`,
+        opacity: isSuggestion ? 0.7 : 1,
+        padding: "3px 7px",
+        transition: "opacity 0.12s, box-shadow 0.12s",
+        ...style,
+      }}
+      onClick={() => onClick?.(event)}
+      title={event.title}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLDivElement).style.opacity = "1";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-sm)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLDivElement).style.opacity = isSuggestion ? "0.7" : "1";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "var(--font-ui)",
+          fontSize: 11,
+          fontWeight: 500,
+          color,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          lineHeight: "14px",
+        }}
+      >
+        {event.title}
+      </div>
+      {h >= 32 && (
+        <div
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            color,
+            opacity: 0.65,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {formatTime(event.start_at)} – {formatTime(event.end_at)}
+        </div>
+      )}
+      {isSuggestion && h >= 20 && (
+        <div
+          style={{
+            position: "absolute",
+            top: 2,
+            right: 4,
+            fontFamily: "var(--font-mono)",
+            fontSize: 9,
+            color,
+            opacity: 0.55,
+            letterSpacing: "0.04em",
+          }}
+        >
+          suggest
+        </div>
+      )}
+    </div>
+  );
 }

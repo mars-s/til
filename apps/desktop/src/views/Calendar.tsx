@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import WeekView from "./calendar/Week";
 import MonthView from "./calendar/Month";
-import { getEvents, type CalendarEvent } from "../lib/invoke";
+import CalendarSidebar from "../components/CalendarSidebar";
+import { getEvents, type CalendarEvent, type Task } from "../lib/invoke";
+import { fetchTasks } from "../lib/db";
 
 type CalView = "week" | "month";
 
@@ -12,11 +14,18 @@ interface CalendarProps {
 
 export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getEvents()
-      .then(setEvents)
+    Promise.all([
+      getEvents(),
+      fetchTasks(),
+    ])
+      .then(([evs, tsks]) => {
+        setEvents(evs);
+        setTasks(tsks);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,47 +42,79 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
   }, [onCalViewChange]);
 
   const handleDayClick = (date: Date) => {
-    // Clicking a day in month view switches to week view
     onCalViewChange("week");
-    // WeekView manages its own weekStart state; scroll to clicked date
-    // via a signal would need lifting — for now just switch views
     void date;
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Sub-nav */}
-      <div
-        className="flex items-center gap-1 px-4 py-2 flex-shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        {(["week", "month"] as CalView[]).map((v) => (
-          <button
-            key={v}
-            className="px-3 py-1 rounded text-xs font-medium capitalize"
-            style={{
-              background: calView === v ? "var(--accent)" : "var(--surface-hover)",
-              color: calView === v ? "#fff" : "var(--text-secondary)",
-            }}
-            onClick={() => onCalViewChange(v)}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
+  const unscheduledTasks = tasks.filter(
+    (t) => t.scheduled_at === null && t.status !== "Done",
+  );
 
-      {loading ? (
+  return (
+    <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
+      {/* Sidebar */}
+      <CalendarSidebar
+        unscheduledTasks={unscheduledTasks}
+        onTaskClick={() => {}}
+      />
+
+      {/* Main calendar area */}
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {/* View switcher sub-nav */}
         <div
-          className="flex items-center justify-center flex-1"
-          style={{ color: "var(--text-secondary)" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            padding: "8px 16px",
+            borderBottom: "1px solid var(--border)",
+            flexShrink: 0,
+            background: "var(--ink-2)",
+          }}
         >
-          Loading…
+          {(["week", "month"] as CalView[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => onCalViewChange(v)}
+              style={{
+                padding: "4px 12px",
+                borderRadius: "var(--r-sm)",
+                background: calView === v ? "var(--smoke)" : "transparent",
+                color: calView === v ? "var(--text-1)" : "var(--text-3)",
+                border: calView === v ? "1px solid var(--border-2)" : "1px solid transparent",
+                fontFamily: "var(--font-ui)",
+                fontSize: 12,
+                fontWeight: calView === v ? 500 : 400,
+                cursor: "pointer",
+                letterSpacing: "0.01em",
+                textTransform: "capitalize",
+              }}
+            >
+              {v}
+            </button>
+          ))}
         </div>
-      ) : calView === "week" ? (
-        <WeekView events={events} onDayClick={handleDayClick} />
-      ) : (
-        <MonthView events={events} onDayClick={handleDayClick} />
-      )}
+
+        {loading ? (
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-3)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 12,
+            }}
+          >
+            loading…
+          </div>
+        ) : calView === "week" ? (
+          <WeekView events={events} onDayClick={handleDayClick} />
+        ) : (
+          <MonthView events={events} onDayClick={handleDayClick} />
+        )}
+      </div>
     </div>
   );
 }

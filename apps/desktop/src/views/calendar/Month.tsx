@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -26,38 +26,78 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
     events.filter((ev) => isSameDay(parseISO(ev.start_at), day));
 
   return (
-    <div className="flex flex-col h-full">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-2 flex-shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px",
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border)",
+          background: "var(--ink-2)",
+        }}
       >
         <button
-          className="px-3 py-1.5 rounded text-sm"
-          style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
           onClick={() =>
             setCurrent((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
           }
+          style={{
+            padding: "4px 10px",
+            background: "var(--smoke)",
+            border: "1px solid var(--border-2)",
+            borderRadius: "var(--r-sm)",
+            color: "var(--text-2)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 12,
+            cursor: "pointer",
+          }}
         >
           ← Prev
         </button>
-        <h2 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+
+        <span
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 18,
+            fontStyle: "italic",
+            color: "var(--text-1)",
+          }}
+        >
           {format(current, "MMMM yyyy")}
-        </h2>
-        <div className="flex gap-2">
+        </span>
+
+        <div style={{ display: "flex", gap: 6 }}>
           <button
-            className="px-3 py-1.5 rounded text-sm"
-            style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
             onClick={() => setCurrent(new Date())}
+            style={{
+              padding: "4px 10px",
+              background: "var(--smoke)",
+              border: "1px solid var(--border-2)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--amber)",
+              fontFamily: "var(--font-ui)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
           >
             Today
           </button>
           <button
-            className="px-3 py-1.5 rounded text-sm"
-            style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
             onClick={() =>
               setCurrent((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))
             }
+            style={{
+              padding: "4px 10px",
+              background: "var(--smoke)",
+              border: "1px solid var(--border-2)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--text-2)",
+              fontFamily: "var(--font-ui)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
           >
             Next →
           </button>
@@ -66,14 +106,26 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
 
       {/* Day-of-week header */}
       <div
-        className="grid grid-cols-7 flex-shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border)",
+          background: "var(--ink-2)",
+        }}
       >
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
+            style={{
+              padding: "8px 0",
+              textAlign: "center",
+              fontFamily: "var(--font-ui)",
+              fontSize: 11,
+              color: "var(--text-3)",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+            }}
           >
             {d}
           </div>
@@ -81,9 +133,19 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 grid grid-rows-6 overflow-hidden">
+      <div
+        style={{
+          flex: 1,
+          display: "grid",
+          gridTemplateRows: "repeat(6, 1fr)",
+          overflow: "hidden",
+        }}
+      >
         {weeks.map((week, wi) => (
-          <div key={wi} className="grid grid-cols-7">
+          <div
+            key={wi}
+            style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}
+          >
             {week.map((day, di) => {
               const dayEvents = eventsOnDay(day);
               const isToday = isSameDay(day, today);
@@ -92,51 +154,70 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
               return (
                 <div
                   key={di}
-                  className="p-1 cursor-pointer"
+                  onClick={() => onDayClick?.(day)}
                   style={{
+                    padding: "6px 4px",
+                    cursor: "pointer",
                     borderRight: di < 6 ? "1px solid var(--border)" : undefined,
                     borderBottom: wi < 5 ? "1px solid var(--border)" : undefined,
-                    background: isToday ? "rgba(59,130,246,0.05)" : "transparent",
-                    minHeight: "80px",
+                    background: isToday ? "rgba(232,168,66,0.03)" : "transparent",
+                    minHeight: 72,
+                    transition: "background 0.12s",
                   }}
-                  onClick={() => onDayClick?.(day)}
+                  onMouseEnter={(e) => {
+                    if (!isToday) (e.currentTarget as HTMLDivElement).style.background = "var(--ink-3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = isToday
+                      ? "rgba(232,168,66,0.03)"
+                      : "transparent";
+                  }}
                 >
                   {/* Day number */}
-                  <div className="flex items-start justify-end">
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 3 }}>
                     <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
                       style={{
-                        background: isToday ? "var(--accent)" : "transparent",
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: "var(--font-ui)",
+                        fontSize: 12,
+                        fontWeight: isToday ? 600 : 400,
+                        background: isToday ? "var(--amber)" : "transparent",
                         color: isToday
-                          ? "#fff"
+                          ? "var(--ink)"
                           : inMonth
-                          ? "var(--text-primary)"
-                          : "var(--text-secondary)",
-                        fontWeight: isToday ? "600" : "400",
+                          ? "var(--text-2)"
+                          : "var(--text-4)",
                       }}
                     >
                       {format(day, "d")}
                     </span>
                   </div>
 
-                  {/* Event dots */}
-                  <div className="flex flex-col gap-0.5 mt-0.5">
+                  {/* Event pills */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     {dayEvents.slice(0, 3).map((ev) => {
-                      const color = ev.color ?? "var(--accent)";
+                      const color = ev.color ?? "var(--sky)";
                       return (
                         <div
                           key={ev.id}
-                          className="truncate text-xs px-1 py-0.5 rounded"
+                          title={ev.title}
                           style={{
-                            background: ev.is_suggestion
-                              ? "transparent"
-                              : `${color}33`,
-                            border: ev.is_suggestion
-                              ? `1px dashed ${color}`
-                              : "none",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            fontFamily: "var(--font-ui)",
+                            fontSize: 10,
+                            padding: "1px 5px",
+                            borderRadius: 3,
+                            background: ev.is_suggestion ? "transparent" : `${color}28`,
+                            border: ev.is_suggestion ? `1px dashed ${color}` : "none",
                             color,
                           }}
-                          title={ev.title}
                         >
                           {ev.title}
                         </div>
@@ -144,10 +225,14 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
                     })}
                     {dayEvents.length > 3 && (
                       <div
-                        className="text-xs px-1"
-                        style={{ color: "var(--text-secondary)" }}
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 10,
+                          color: "var(--text-4)",
+                          paddingLeft: 4,
+                        }}
                       >
-                        +{dayEvents.length - 3} more
+                        +{dayEvents.length - 3}
                       </div>
                     )}
                   </div>

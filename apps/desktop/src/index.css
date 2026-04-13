@@ -1,36 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Geist:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg: #1a1a1a;
-  --surface: #252525;
-  --surface-hover: #2d2d2d;
-  --border: #333333;
-  --text-primary: #f5f5f5;
-  --text-secondary: #999999;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --span-time: #3b82f6;
-  --span-date: #10b981;
-  --span-priority: #f59e0b;
-  --span-duration: #8b5cf6;
-  --span-tag: #6b7280;
-  --status-todo: #6b7280;
-  --status-inprogress: #f59e0b;
-  --status-done: #10b981;
+  /* Base layers */
+  --ink:    #080808;
+  --ink-2:  #101010;
+  --ink-3:  #161616;
+  --ink-4:  #1e1e1e;
+  --smoke:  #282828;
+  --ash:    #363636;
+
+  /* Text hierarchy */
+  --text-1: #f0e8dc;
+  --text-2: #a89880;
+  --text-3: #6a6058;
+  --text-4: #3d3830;
+
+  /* Accents */
+  --amber:    #e8a842;
+  --amber-hi: #f0bc64;
+  --jade:     #3eb58a;
+  --rose:     #e05555;
+  --sky:      #5b9cf0;
+  --violet:   #9b74d4;
+
+  /* Priority colors */
+  --p-urgent: #e05555;
+  --p-high:   #e8a842;
+  --p-medium: #5b9cf0;
+  --p-low:    #9b74d4;
+
+  /* Surfaces */
+  --surface:   var(--ink-3);
+  --surface-2: var(--ink-4);
+  --border:    rgba(255,255,255,0.055);
+  --border-2:  rgba(255,255,255,0.09);
+
+  /* Legacy compat aliases */
+  --bg:             var(--ink);
+  --text-primary:   var(--text-1);
+  --text-secondary: var(--text-2);
+  --accent:         var(--sky);
+  --surface-hover:  var(--ink-4);
+  --span-time:      var(--sky);
+  --span-date:      var(--jade);
+  --span-priority:  var(--amber);
+  --span-duration:  var(--violet);
+  --span-tag:       var(--text-3);
+  --status-todo:    var(--text-3);
+  --status-inprogress: var(--amber);
+  --status-done:    var(--jade);
+
+  /* Fonts */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-ui:      'Geist', system-ui, sans-serif;
+  --font-mono:    'DM Mono', 'JetBrains Mono', monospace;
+
+  /* Radii */
+  --r-sm:  5px;
+  --r-md:  9px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-  font-size: 14px;
+html, body, #root {
+  height: 100%;
+  background: var(--ink);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Grain overlay for warmth/depth */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px;
+  z-index: 9999;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--ash); border-radius: 2px; }
+
+/* Selection */
+::selection { background: rgba(232,168,66,0.25); color: var(--text-1); }
+
+/* Utility classes */
+.font-display { font-family: var(--font-display) !important; }
+.font-mono    { font-family: var(--font-mono) !important; }
+.font-ui      { font-family: var(--font-ui) !important; }
+
+/* Fade-in animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeUp { animation: fadeUp 0.25s ease both; }
+
+/* Task completion animation */
+@keyframes checkFill {
+  0%   { stroke-dashoffset: 20; opacity: 0; }
+  100% { stroke-dashoffset: 0;  opacity: 1; }
+}
+
+/* Task card hover behavior */
+.task-card {
+  border: 1px solid transparent !important;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.task-card:hover {
+  border-color: var(--border-2) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.task-card .task-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.task-card:hover .task-actions {
+  opacity: 1 !important;
+}
+
+/* Command palette item hover */
+.cmd-item[data-selected="true"],
+.cmd-item[aria-selected="true"] {
+  background: var(--ink-4) !important;
+}

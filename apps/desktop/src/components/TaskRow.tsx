@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { type Task, type Priority, type TaskStatus } from "../lib/invoke";
+import { type Task, type Priority } from "../lib/invoke";
 
 interface TaskRowProps {
   task: Task;
@@ -8,27 +8,29 @@ interface TaskRowProps {
 }
 
 const PRIORITY_COLORS: Record<Priority, string> = {
-  Low: "#6b7280",
-  Medium: "#3b82f6",
-  High: "#f59e0b",
-  Urgent: "#ef4444",
+  Urgent: "var(--p-urgent)",
+  High:   "var(--p-high)",
+  Medium: "var(--p-medium)",
+  Low:    "var(--p-low)",
 };
 
-const STATUS_ICONS: Record<TaskStatus, string> = {
-  Todo: "○",
-  InProgress: "◔",
-  Done: "●",
-};
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  Todo: "var(--status-todo)",
-  InProgress: "var(--status-inprogress)",
-  Done: "var(--status-done)",
-};
+function formatTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
 
 export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0); // 0–1
+  const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStartRef = useRef<number>(0);
   const HOLD_MS = 500;
@@ -52,7 +54,7 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
         }
       }, 16);
     },
-    [task.id, onToggle]
+    [task.id, onToggle],
   );
 
   const endHold = useCallback(
@@ -65,23 +67,19 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
       const elapsed = Date.now() - holdStartRef.current;
       setHoldProgress(0);
       if (elapsed < 200) {
-        // Short click — just toggle
         onToggle(task.id);
       }
     },
-    [task.id, onToggle]
+    [task.id, onToggle],
   );
 
-  // Touch swipe-to-delete
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
-
   const onTouchMove = (e: React.TouchEvent) => {
     const dx = e.touches[0].clientX - touchStartX.current;
     if (dx < 0) setSwipeX(Math.max(dx, -120));
   };
-
   const onTouchEnd = () => {
     if (swipeX < -80) {
       onDelete(task.id);
@@ -91,6 +89,7 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
   };
 
   const isDone = task.status === "Done";
+  const priorityColor = PRIORITY_COLORS[task.priority];
 
   return (
     <div
@@ -99,32 +98,61 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Delete reveal */}
+      {/* Delete reveal (swipe) */}
       <div
         className="absolute right-0 top-0 bottom-0 flex items-center justify-center px-4"
-        style={{ background: "#ef4444", width: "80px" }}
+        style={{ background: "var(--rose)", width: 80 }}
       >
-        <span className="text-white text-sm font-medium">Delete</span>
+        <span
+          style={{
+            color: "var(--ink)",
+            fontSize: 12,
+            fontFamily: "var(--font-ui)",
+            fontWeight: 500,
+          }}
+        >
+          Delete
+        </span>
       </div>
 
-      {/* Row content */}
+      {/* Card */}
       <div
-        className="relative flex items-start gap-3 px-4 py-3 cursor-pointer select-none"
+        className="task-card"
         style={{
-          background: "var(--surface)",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 0,
+          borderRadius: "var(--r-md)",
+          background: "var(--ink-3)",
+          overflow: "hidden",
+          cursor: "default",
           transform: `translateX(${swipeX}px)`,
           transition: swipeX === 0 ? "transform 0.2s ease" : "none",
-          borderBottom: "1px solid var(--border)",
         }}
         onClick={() => setExpanded((x) => !x)}
       >
-        {/* Status circle / hold-to-toggle */}
-        <button
-          className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center relative mt-0.5"
+        {/* Priority strip */}
+        <div
           style={{
-            border: `2px solid ${STATUS_COLORS[task.status]}`,
+            width: 3,
+            alignSelf: "stretch",
+            background: priorityColor,
+            flexShrink: 0,
+            opacity: isDone ? 0.3 : 1,
+          }}
+        />
+
+        {/* Checkbox */}
+        <button
+          style={{
+            padding: "11px 10px",
+            flexShrink: 0,
             background: "transparent",
+            border: "none",
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            position: "relative",
           }}
           onMouseDown={startHold}
           onMouseUp={endHold}
@@ -137,87 +165,183 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            {isDone ? (
+              <>
+                <circle cx="8" cy="8" r="7" fill="var(--jade)" stroke="var(--jade)" strokeWidth="1" />
+                <path
+                  d="M5 8 L7 10 L11 6"
+                  stroke="var(--ink)"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    strokeDasharray: 20,
+                    strokeDashoffset: 0,
+                    animation: "checkFill 0.2s ease both",
+                  }}
+                />
+              </>
+            ) : (
+              <circle cx="8" cy="8" r="7" fill="none" stroke="var(--ash)" strokeWidth="1.5" />
+            )}
+          </svg>
           {/* Hold progress ring */}
           {holdProgress > 0 && (
             <svg
-              className="absolute inset-0 w-full h-full -rotate-90"
-              viewBox="0 0 20 20"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                transform: "rotate(-90deg)",
+                pointerEvents: "none",
+              }}
+              viewBox="0 0 36 36"
             >
               <circle
-                cx="10"
-                cy="10"
-                r="8"
+                cx="18"
+                cy="18"
+                r="12"
                 fill="none"
-                stroke={STATUS_COLORS[task.status]}
+                stroke={priorityColor}
                 strokeWidth="2"
-                strokeDasharray={`${holdProgress * 50.3} 50.3`}
+                strokeDasharray={`${holdProgress * 75.4} 75.4`}
                 opacity="0.8"
               />
             </svg>
           )}
-          <span
-            className="text-xs leading-none"
-            style={{ color: STATUS_COLORS[task.status], fontSize: "9px" }}
-          >
-            {STATUS_ICONS[task.status]}
-          </span>
         </button>
 
-        {/* Title + meta */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className="text-sm leading-5"
-              style={{
-                color: isDone ? "var(--text-secondary)" : "var(--text-primary)",
-                textDecoration: isDone ? "line-through" : "none",
-              }}
-            >
-              {task.title}
-            </span>
-            <PriorityBadge priority={task.priority} />
+        {/* Content */}
+        <div style={{ flex: 1, padding: "10px 12px 10px 4px", minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 450,
+              color: isDone ? "var(--text-3)" : "var(--text-1)",
+              textDecoration: isDone ? "line-through" : "none",
+              textDecorationColor: "var(--text-4)",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.4,
+            }}
+          >
+            {task.title}
           </div>
 
-          {task.scheduled_at && (
-            <div className="mt-0.5 text-xs" style={{ color: "var(--span-time)" }}>
-              {formatDate(task.scheduled_at)}
+          {/* Metadata chips */}
+          {(task.scheduled_at || task.duration_minutes != null || task.tags.length > 0) && (
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginTop: 5,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              {task.scheduled_at && (
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--sky)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 3,
+                  }}
+                >
+                  ◷ {formatTime(task.scheduled_at)}
+                </span>
+              )}
+              {task.duration_minutes != null && (
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--text-3)",
+                  }}
+                >
+                  {task.duration_minutes}m
+                </span>
+              )}
+              {task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--violet)",
+                    padding: "0 5px",
+                    background: "rgba(155,116,212,0.1)",
+                    borderRadius: 3,
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
 
           {/* Expanded details */}
           {expanded && (
-            <div className="mt-2 space-y-1">
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
               {task.deadline_at && (
-                <div className="text-xs" style={{ color: "var(--span-date)" }}>
-                  Due: {formatDate(task.deadline_at)}
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--rose)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  ⚑ due {formatTime(task.deadline_at)}
                 </div>
               )}
-              {task.duration_minutes != null && (
-                <div className="text-xs" style={{ color: "var(--span-duration)" }}>
-                  Duration: {task.duration_minutes}m
-                </div>
-              )}
-              {task.tags.length > 0 && (
-                <div className="flex gap-1.5 flex-wrap mt-1">
-                  {task.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-1.5 py-0.5 rounded text-xs"
-                      style={{
-                        background: "var(--span-tag)22",
-                        color: "var(--span-tag)",
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <button
-                className="text-xs mt-2 px-2 py-1 rounded"
+              <div
                 style={{
-                  background: "#ef444422",
-                  color: "#ef4444",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 2,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10,
+                    color: "var(--text-4)",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {task.priority}
+                </span>
+                <div
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: priorityColor,
+                    opacity: 0.7,
+                  }}
+                />
+              </div>
+              <button
+                style={{
+                  marginTop: 4,
+                  padding: "4px 10px",
+                  background: "rgba(224,85,85,0.1)",
+                  border: "1px solid rgba(224,85,85,0.2)",
+                  borderRadius: "var(--r-sm)",
+                  color: "var(--rose)",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  alignSelf: "flex-start",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -230,44 +354,32 @@ export default function TaskRow({ task, onToggle, onDelete }: TaskRowProps) {
           )}
         </div>
 
-        {/* Expand chevron */}
-        <span
-          className="flex-shrink-0 text-xs mt-1 transition-transform duration-150"
-          style={{
-            color: "var(--text-secondary)",
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-          }}
+        {/* Right actions — hover-revealed */}
+        <div
+          className="task-actions"
+          style={{ padding: "8px 10px", display: "flex", alignItems: "center" }}
         >
-          ▾
-        </span>
+          <button
+            style={{
+              color: "var(--text-3)",
+              fontSize: 18,
+              lineHeight: 1,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: "2px 4px",
+              borderRadius: "var(--r-sm)",
+            }}
+            title="Delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.id);
+            }}
+          >
+            ×
+          </button>
+        </div>
       </div>
     </div>
   );
-}
-
-function PriorityBadge({ priority }: { priority: Priority }) {
-  if (priority === "Medium") return null;
-  const color = PRIORITY_COLORS[priority];
-  return (
-    <span
-      className="px-1.5 py-0.5 rounded text-xs font-medium"
-      style={{ background: `${color}22`, color }}
-    >
-      {priority}
-    </span>
-  );
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }

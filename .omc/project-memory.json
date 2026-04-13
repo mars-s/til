@@ -112,6 +112,91 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "apps/desktop/src/views/Calendar.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1776085074561,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776085058838,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/views/Tasks.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776085059543,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/CommandPalette.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776085062195,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/views/calendar/Week.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776085063029,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/views/calendar/Month.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776085063749,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/index.css",
+      "accessCount": 2,
+      "lastAccessed": 1776084815859,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/TaskRow.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776084899845,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/TaskInput.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776084918361,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/AuthScreen.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776084945064,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/EventBlock.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776084982881,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/CalendarSidebar.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776085061582,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/invoke.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776084791271,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/db.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776084791726,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

@@ -7,17 +7,17 @@ interface TaskInputProps {
 }
 
 const SPAN_COLORS: Record<string, string> = {
-  Time: "var(--span-time)",
-  Date: "var(--span-date)",
-  Priority: "var(--span-priority)",
-  Duration: "var(--span-duration)",
-  Tag: "var(--span-tag)",
-  Recurrence: "var(--span-tag)",
+  Time:       "var(--sky)",
+  Date:       "var(--jade)",
+  Priority:   "var(--amber)",
+  Duration:   "var(--violet)",
+  Tag:        "var(--text-2)",
+  Recurrence: "var(--text-2)",
 };
 
 function buildHighlightSegments(
   text: string,
-  spans: Span[]
+  spans: Span[],
 ): Array<{ text: string; color?: string }> {
   if (spans.length === 0) return [{ text }];
 
@@ -31,7 +31,7 @@ function buildHighlightSegments(
     }
     segments.push({
       text: text.slice(span.start, span.end),
-      color: SPAN_COLORS[span.kind] ?? "var(--accent)",
+      color: SPAN_COLORS[span.kind] ?? "var(--amber)",
     });
     cursor = span.end;
   }
@@ -41,6 +41,20 @@ function buildHighlightSegments(
   }
 
   return segments;
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
@@ -88,29 +102,38 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
         (ref as React.RefObject<HTMLInputElement>).current?.blur();
       }
     },
-    [value, parsed, onSubmit, ref]
+    [value, parsed, onSubmit, ref],
   );
 
   const segments = parsed ? buildHighlightSegments(value, parsed.spans) : null;
 
   return (
-    <div className="relative w-full">
+    <div style={{ position: "relative", width: "100%" }}>
       {/* Highlight overlay */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 pointer-events-none px-4 py-3 text-sm leading-6 overflow-hidden whitespace-pre"
-        style={{ color: "transparent" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          padding: "12px 16px",
+          fontSize: 14,
+          lineHeight: "24px",
+          overflow: "hidden",
+          whiteSpace: "pre",
+          fontFamily: "var(--font-ui)",
+          color: "transparent",
+          zIndex: 0,
+        }}
       >
         {segments
           ? segments.map((seg, i) => (
               <span
                 key={i}
                 style={{
-                  color: seg.color ? seg.color : "transparent",
-                  background: seg.color
-                    ? `${seg.color}22`
-                    : "transparent",
-                  borderRadius: seg.color ? "3px" : undefined,
+                  color: seg.color ?? "transparent",
+                  background: seg.color ? `${seg.color}1a` : "transparent",
+                  borderRadius: seg.color ? 3 : undefined,
                   padding: seg.color ? "0 1px" : undefined,
                 }}
               >
@@ -127,41 +150,68 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Add a task… (e.g. 'call dentist tomorrow 3pm for 30min !high')"
-        className="w-full px-4 py-3 text-sm leading-6 rounded-lg outline-none"
+        placeholder="What needs doing?"
         style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
-          caretColor: "var(--accent)",
+          width: "100%",
+          padding: "12px 16px",
+          fontSize: 14,
+          lineHeight: "24px",
+          fontFamily: "var(--font-ui)",
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          color: "var(--text-1)",
+          caretColor: "var(--amber)",
           position: "relative",
           zIndex: 1,
+          borderRadius: "var(--r-lg)",
         }}
         autoComplete="off"
         spellCheck={false}
       />
 
-      {/* Parsed preview chips */}
-      {parsed && value.trim() && (
-        <div className="flex flex-wrap gap-1.5 mt-1.5 px-1">
-          {parsed.scheduled_at && (
-            <Chip label={`at ${formatDate(parsed.scheduled_at)}`} color="var(--span-time)" />
-          )}
-          {parsed.deadline_at && (
-            <Chip label={`due ${formatDate(parsed.deadline_at)}`} color="var(--span-date)" />
-          )}
-          {parsed.duration_minutes != null && (
-            <Chip label={`${parsed.duration_minutes}m`} color="var(--span-duration)" />
-          )}
-          {parsed.priority !== "Medium" && (
-            <Chip label={parsed.priority} color="var(--span-priority)" />
-          )}
-          {parsed.tags.map((tag) => (
-            <Chip key={tag} label={`#${tag}`} color="var(--span-tag)" />
-          ))}
-          {loading && <Chip label="..." color="var(--text-secondary)" />}
+      {/* Bottom row: chips + hint */}
+      {(parsed && value.trim()) || value.trim() ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 14px 10px",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {parsed?.scheduled_at && (
+              <Chip label={`◷ ${formatDate(parsed.scheduled_at)}`} color="var(--sky)" />
+            )}
+            {parsed?.deadline_at && (
+              <Chip label={`⚑ ${formatDate(parsed.deadline_at)}`} color="var(--rose)" />
+            )}
+            {parsed?.duration_minutes != null && (
+              <Chip label={`${parsed.duration_minutes}m`} color="var(--violet)" />
+            )}
+            {parsed?.priority && parsed.priority !== "Medium" && (
+              <Chip label={parsed.priority} color="var(--amber)" />
+            )}
+            {parsed?.tags.map((tag) => (
+              <Chip key={tag} label={`#${tag}`} color="var(--text-2)" />
+            ))}
+            {loading && <Chip label="…" color="var(--text-3)" />}
+          </div>
+
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              color: "var(--text-4)",
+              flexShrink: 0,
+            }}
+          >
+            ↵ to add
+          </span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -169,24 +219,18 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
 function Chip({ label, color }: { label: string; color: string }) {
   return (
     <span
-      className="px-2 py-0.5 rounded text-xs font-medium"
-      style={{ background: `${color}22`, color }}
+      style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: 11,
+        fontWeight: 400,
+        color,
+        background: `${color}1a`,
+        padding: "2px 7px",
+        borderRadius: 3,
+        letterSpacing: "0.01em",
+      }}
     >
       {label}
     </span>
   );
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }

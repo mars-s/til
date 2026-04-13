@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   startOfWeek,
   addDays,
@@ -12,7 +12,7 @@ import {
 import EventBlock from "../../components/EventBlock";
 import { type CalendarEvent } from "../../lib/invoke";
 
-const HOUR_HEIGHT = 60; // px per hour
+const HOUR_HEIGHT = 56; // px per hour
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 interface WeekViewProps {
@@ -21,18 +21,15 @@ interface WeekViewProps {
 }
 
 export default function WeekView({ events, onDayClick }: WeekViewProps) {
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date())
-  );
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
+    [weekStart],
   );
 
   const today = new Date();
 
-  // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
@@ -42,7 +39,6 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
       if (e.key === "ArrowRight") setWeekStart((w) => addWeeks(w, 1));
       if (e.key === "t") setWeekStart(startOfWeek(new Date()));
 
-      // 1–7 keys scroll to that day column
       const num = parseInt(e.key, 10);
       if (num >= 1 && num <= 7) {
         const col = document.getElementById(`week-col-${num - 1}`);
@@ -53,80 +49,139 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Get events for a specific day
   const eventsForDay = useCallback(
-    (day: Date) =>
-      events.filter((ev) => isSameDay(parseISO(ev.start_at), day)),
-    [events]
+    (day: Date) => events.filter((ev) => isSameDay(parseISO(ev.start_at), day)),
+    [events],
   );
 
   const weekLabel = `${format(days[0], "MMM d")} – ${format(days[6], "MMM d, yyyy")}`;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Week navigation header */}
       <div
-        className="flex items-center justify-between px-4 py-2 flex-shrink-0"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px",
+          flexShrink: 0,
+          borderBottom: "1px solid var(--border)",
+          background: "var(--ink-2)",
+        }}
       >
         <button
-          className="px-3 py-1.5 rounded text-sm"
-          style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
           onClick={() => setWeekStart((w) => subWeeks(w, 1))}
+          style={{
+            padding: "4px 10px",
+            background: "var(--smoke)",
+            border: "1px solid var(--border-2)",
+            borderRadius: "var(--r-sm)",
+            color: "var(--text-2)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 12,
+            cursor: "pointer",
+          }}
         >
           ← Prev
         </button>
-        <h2 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 12,
+            color: "var(--text-2)",
+            letterSpacing: "0.02em",
+          }}
+        >
           {weekLabel}
-        </h2>
-        <div className="flex gap-2">
+        </span>
+
+        <div style={{ display: "flex", gap: 6 }}>
           <button
-            className="px-3 py-1.5 rounded text-sm"
-            style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
             onClick={() => setWeekStart(startOfWeek(new Date()))}
+            style={{
+              padding: "4px 10px",
+              background: "var(--smoke)",
+              border: "1px solid var(--border-2)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--amber)",
+              fontFamily: "var(--font-ui)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
           >
             Today
           </button>
           <button
-            className="px-3 py-1.5 rounded text-sm"
-            style={{ background: "var(--surface-hover)", color: "var(--text-primary)" }}
             onClick={() => setWeekStart((w) => addWeeks(w, 1))}
+            style={{
+              padding: "4px 10px",
+              background: "var(--smoke)",
+              border: "1px solid var(--border-2)",
+              borderRadius: "var(--r-sm)",
+              color: "var(--text-2)",
+              fontFamily: "var(--font-ui)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
           >
             Next →
           </button>
         </div>
       </div>
 
-      {/* Day headers */}
+      {/* Day column headers */}
       <div
-        className="grid flex-shrink-0"
         style={{
-          gridTemplateColumns: "56px repeat(7, 1fr)",
+          display: "grid",
+          gridTemplateColumns: "52px repeat(7, 1fr)",
+          flexShrink: 0,
           borderBottom: "1px solid var(--border)",
+          background: "var(--ink-2)",
         }}
       >
-        <div /> {/* Time gutter */}
+        <div /> {/* Gutter */}
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
           return (
             <div
               key={i}
               id={`week-col-${i}`}
-              className="py-2 text-center text-xs font-medium cursor-pointer"
               style={{
-                color: isToday ? "var(--accent)" : "var(--text-secondary)",
+                padding: "10px 0 8px",
+                textAlign: "center",
+                cursor: "pointer",
                 borderLeft: i > 0 ? "1px solid var(--border)" : undefined,
               }}
               onClick={() => onDayClick?.(day)}
             >
-              <div>{format(day, "EEE")}</div>
               <div
-                className="mt-0.5 w-6 h-6 rounded-full mx-auto flex items-center justify-center"
                 style={{
-                  background: isToday ? "var(--accent)" : "transparent",
-                  color: isToday ? "#fff" : "inherit",
-                  fontSize: "13px",
-                  fontWeight: isToday ? "600" : "400",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 11,
+                  color: isToday ? "var(--amber)" : "var(--text-3)",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                {format(day, "EEE")}
+              </div>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  margin: "0 auto",
+                  borderRadius: "50%",
+                  background: isToday ? "var(--amber)" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 16,
+                  fontWeight: isToday ? 600 : 400,
+                  color: isToday ? "var(--ink)" : "var(--text-2)",
                 }}
               >
                 {format(day, "d")}
@@ -137,24 +192,28 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
       </div>
 
       {/* Scrollable time grid */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         <div
-          className="grid"
           style={{
-            gridTemplateColumns: "56px repeat(7, 1fr)",
+            display: "grid",
+            gridTemplateColumns: "52px repeat(7, 1fr)",
             minHeight: `${HOUR_HEIGHT * 24}px`,
           }}
         >
-          {/* Hour labels */}
-          <div className="relative">
+          {/* Hour labels gutter */}
+          <div style={{ position: "relative" }}>
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="absolute right-2 text-xs"
                 style={{
+                  position: "absolute",
+                  right: 8,
                   top: hour * HOUR_HEIGHT - 7,
-                  color: "var(--text-secondary)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  color: "var(--text-4)",
                   userSelect: "none",
+                  textAlign: "right",
                 }}
               >
                 {hour === 0 ? "" : format12(hour)}
@@ -169,30 +228,29 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
             return (
               <div
                 key={di}
-                className="relative"
                 style={{
+                  position: "relative",
                   height: `${HOUR_HEIGHT * 24}px`,
                   borderLeft: "1px solid var(--border)",
-                  background: isToday ? "rgba(59,130,246,0.03)" : "transparent",
+                  background: isToday ? "rgba(232,168,66,0.025)" : "transparent",
                 }}
               >
-                {/* Hour lines */}
+                {/* Hour lines (horizontal only) */}
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute left-0 right-0"
                     style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
                       top: hour * HOUR_HEIGHT,
-                      borderTop: "1px solid var(--border)",
-                      opacity: 0.5,
+                      borderTop: "1px solid rgba(255,255,255,0.04)",
                     }}
                   />
                 ))}
 
                 {/* Current time indicator */}
-                {isToday && (
-                  <CurrentTimeLine />
-                )}
+                {isToday && <CurrentTimeLine />}
 
                 {/* Events */}
                 {dayEvents.map((ev) => {
@@ -225,16 +283,34 @@ function CurrentTimeLine() {
 
   return (
     <div
-      className="absolute left-0 right-0 z-10 pointer-events-none"
-      style={{ top }}
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top,
+        zIndex: 10,
+        pointerEvents: "none",
+      }}
     >
       <div
-        className="absolute left-0 right-0"
-        style={{ height: "2px", background: "#ef4444" }}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          height: "1.5px",
+          background: "var(--rose)",
+        }}
       />
       <div
-        className="absolute -left-1 w-2 h-2 rounded-full"
-        style={{ background: "#ef4444", top: "-3px" }}
+        style={{
+          position: "absolute",
+          left: -3,
+          top: -3,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: "var(--rose)",
+        }}
       />
     </div>
   );
