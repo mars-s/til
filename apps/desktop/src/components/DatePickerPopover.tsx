@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type RefObject } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as chrono from "chrono-node";
 import {
@@ -18,6 +18,7 @@ import {
 import { CalendarIcon, Star, Moon, Archive, Plus, ChevronRight, ChevronLeft, CalendarDays } from "lucide-react";
 
 interface DatePickerPopoverProps {
+  anchorRef?: RefObject<HTMLDivElement | null>;
   initialDate?: string | null;
   onSelect: (isoDate: string | null) => void;
   onClose: () => void;

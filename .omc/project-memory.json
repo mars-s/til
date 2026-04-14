@@ -120,15 +120,39 @@
       "type": "file"
     },
     {
-      "path": "apps/desktop/src/App.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1776085058838,
+      "path": "apps/desktop/src/components/TaskInput.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1776129207312,
       "type": "file"
     },
     {
       "path": "apps/desktop/src/views/Tasks.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1776128489856,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/TaskRow.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1776128912183,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/DatePickerPopover.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1776128947514,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/components/DeadlinePopover.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1776128949398,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
       "accessCount": 3,
-      "lastAccessed": 1776085059543,
+      "lastAccessed": 1776085058838,
       "type": "file"
     },
     {
@@ -150,21 +174,21 @@
       "type": "file"
     },
     {
+      "path": "apps/desktop/src/lib/db.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776128810597,
+      "type": "file"
+    },
+    {
+      "path": "packages/til-core/src/nlp/task.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776129101385,
+      "type": "file"
+    },
+    {
       "path": "apps/desktop/src/index.css",
       "accessCount": 2,
       "lastAccessed": 1776084815859,
-      "type": "file"
-    },
-    {
-      "path": "apps/desktop/src/components/TaskRow.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776084899845,
-      "type": "file"
-    },
-    {
-      "path": "apps/desktop/src/components/TaskInput.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1776084918361,
       "type": "file"
     },
     {
@@ -187,14 +211,56 @@
     },
     {
       "path": "apps/desktop/src/lib/invoke.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776084791271,
+      "accessCount": 2,
+      "lastAccessed": 1776128497057,
       "type": "file"
     },
     {
-      "path": "apps/desktop/src/lib/db.ts",
+      "path": "apps/desktop/src/components/TagPopover.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776128841928,
+      "type": "file"
+    },
+    {
+      "path": "packages/til-core/rules/tasks.toml",
+      "accessCount": 2,
+      "lastAccessed": 1776129079183,
+      "type": "file"
+    },
+    {
+      "path": "supabase/migrations/20260414000001_add_task_extended_properties.sql",
       "accessCount": 1,
-      "lastAccessed": 1776084791726,
+      "lastAccessed": 1776128523886,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/commands.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776128524187,
+      "type": "file"
+    },
+    {
+      "path": "apps/desktop/src/lib/supabase.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776128524575,
+      "type": "file"
+    },
+    {
+      "path": "packages/til-core/src/types.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776128709599,
+      "type": "file"
+    },
+    {
+      "path": "packages/til-core/src/nlp/engine.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776128709645,
+      "type": "file"
+    },
+    {
+      "path": "supabase/migrations/20260414000002_user_tags.sql",
+      "accessCount": 1,
+      "lastAccessed": 1776128801320,
       "type": "file"
     }
   ],

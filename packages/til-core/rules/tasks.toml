@@ -1,6 +1,6 @@
 [[rules]]
 name = "time_at"
-pattern = "(?i)\\bat\\s+(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)"
+pattern = "(?i)\\b(?:(?:at|on|@)\\s+)?(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm))\\b"
 sets = "scheduled_at"
 span_kind = "Time"
 

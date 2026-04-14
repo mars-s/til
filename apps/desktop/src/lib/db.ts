@@ -92,6 +92,32 @@ export async function updateTaskDate(id: string, scheduled_at: string | null): P
   if (error) throw error;
 }
 
+export async function updateTaskTags(id: string, tags: string[]): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.from('tasks').update({ tags }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function fetchTags(): Promise<string[]> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from('user_tags')
+    .select('name')
+    .order('name');
+  if (error) throw error;
+  return (data ?? []).map((r) => r.name);
+}
+
+export async function ensureTag(name: string): Promise<void> {
+  const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from('user_tags')
+    .upsert({ user_id: user.id, name }, { onConflict: 'user_id,name' })
+    .throwOnError();
+}
+
 export async function removeTask(id: string): Promise<void> {
   const supabase = await getSupabase();
   const { error } = await supabase.from('tasks').delete().eq('id', id);

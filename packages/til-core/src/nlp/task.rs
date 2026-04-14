@@ -78,6 +78,20 @@ pub fn parse(input: &str) -> ParsedTask {
         spans.push(span);
     }
 
+    // Extract hashtags directly — supports multiple tags per input
+    let tag_re = regex::Regex::new(r"#([a-zA-Z][a-zA-Z0-9_-]*)").unwrap();
+    for cap in tag_re.captures_iter(input) {
+        let full = cap.get(0).unwrap();
+        let start = full.start();
+        let end = full.end();
+        // Skip if already masked by another rule
+        if title_mask[start..end].iter().any(|&m| m) {
+            task.tags.push(cap[1].to_string());
+            spans.push(Span { start, end, kind: crate::types::SpanKind::Tag });
+            mask_range(&mut title_mask, start, end);
+        }
+    }
+
     // Build title by removing matched regions
     task.title = build_title(input, &title_mask);
     task.spans = spans;
@@ -230,5 +244,32 @@ mod tests {
         let result = parse("buy groceries");
         assert_eq!(result.title, "buy groceries");
         assert!(result.spans.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+    use chrono::Timelike;
+    #[test]
+    fn test_on_5pm_friday() {
+        let result = parse("do this on 5pm friday");
+        assert!(result.scheduled_at.is_some(), "should parse scheduled_at");
+        let dt = result.scheduled_at.unwrap().with_timezone(&chrono::Local);
+        assert_eq!(dt.hour(), 17, "hour should be 17 (5pm)");
+        println!("title={:?} dt={}", result.title, dt);
+    }
+    #[test]
+    fn test_bare_time() {
+        let result = parse("meeting 3pm tomorrow");
+        assert!(result.scheduled_at.is_some());
+        let dt = result.scheduled_at.unwrap().with_timezone(&chrono::Local);
+        assert_eq!(dt.hour(), 15, "hour should be 15 (3pm)");
+    }
+    #[test]
+    fn test_hashtag_extracted() {
+        let result = parse("buy groceries #errands #home");
+        assert_eq!(result.tags, vec!["errands", "home"]);
+        assert_eq!(result.title.trim(), "buy groceries");
     }
 }

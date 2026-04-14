@@ -83,7 +83,7 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => runParse(value), 120);
+    debounceRef.current = setTimeout(() => runParse(value), 60);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -132,9 +132,10 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
                 key={i}
                 style={{
                   color: seg.color ?? "transparent",
-                  background: seg.color ? `${seg.color}1a` : "transparent",
-                  borderRadius: seg.color ? 3 : undefined,
-                  padding: seg.color ? "0 1px" : undefined,
+                  background: seg.color ? `${seg.color}20` : "transparent",
+                  borderRadius: seg.color ? "5px" : undefined,
+                  padding: seg.color ? "1px 5px" : undefined,
+                  boxShadow: seg.color ? `inset 0 0 0 1px ${seg.color}38` : undefined,
                 }}
               >
                 {seg.text}
