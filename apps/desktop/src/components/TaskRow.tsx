@@ -229,7 +229,7 @@ export default function TaskRow({ task, onToggle, onDelete, onUpdateDate, onUpda
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* Priority bar */}
           <div style={{
-            width: 3, height: 14, borderRadius: 2, background: priorityColor,
+            width: 3, height: 14, borderRadius: 2, background: isDone ? "var(--jade)" : priorityColor,
             flexShrink: 0, opacity: isDone ? 0.2 : 0.75, marginRight: 2,
           }} />
 

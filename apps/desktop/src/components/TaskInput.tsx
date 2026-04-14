@@ -4,6 +4,7 @@ import { parseTask, type ParsedTask, type Span } from "../lib/invoke";
 interface TaskInputProps {
   onSubmit: (parsed: ParsedTask) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  onBlur?: () => void;
 }
 
 const SPAN_COLORS: Record<string, string> = {
@@ -57,7 +58,7 @@ function formatDate(iso: string): string {
   }
 }
 
-export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
+export default function TaskInput({ onSubmit, inputRef, onBlur }: TaskInputProps) {
   const [value, setValue] = useState("");
   const [parsed, setParsed] = useState<ParsedTask | null>(null);
   const [loading, setLoading] = useState(false);
@@ -150,6 +151,7 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onBlur={onBlur}
         placeholder="What needs doing?"
         style={{
           width: "100%",

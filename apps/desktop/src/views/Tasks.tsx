@@ -335,7 +335,7 @@ export default function Tasks({ focusInputSignal }: TasksProps) {
                   boxShadow: "var(--shadow-md)",
                 }}
               >
-                <TaskInput onSubmit={handleSubmit} inputRef={inputRef} />
+                <TaskInput onSubmit={handleSubmit} inputRef={inputRef} onBlur={() => setShowInput(false)} />
               </div>
             </motion.div>
           )}
