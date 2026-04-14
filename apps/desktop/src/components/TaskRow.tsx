@@ -288,7 +288,7 @@ export default function TaskRow({ task, onToggle, onDelete, onUpdateDate, onUpda
                 fontSize: 14, fontWeight: 400, color: isDone ? "var(--text-3)" : "var(--text-1)",
                 textDecoration: isDone ? "line-through" : "none", textDecorationColor: "var(--text-4)",
                 letterSpacing: "-0.01em", transition: "color 0.15s", whiteSpace: "nowrap",
-                overflow: "hidden", textOverflow: "ellipsis", flex: 1,
+                overflow: "hidden", textOverflow: "ellipsis", flex: "0 1 auto",
                 cursor: isExpanded ? "text" : "default",
               }}
             >
@@ -299,8 +299,8 @@ export default function TaskRow({ task, onToggle, onDelete, onUpdateDate, onUpda
           {/* Inline meta icons (collapsed only) */}
           {!isExpanded && (
             <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-              {task.description && <FileText size={11} color="var(--text-4)" strokeWidth={2.5} />}
-              {hasSubtasks && <ListTodo size={12} color="var(--text-4)" strokeWidth={2.5} />}
+              {task.description && <FileText size={13} color="var(--text-4)" strokeWidth={1.5} />}
+              {hasSubtasks && <ListTodo size={14} color="var(--text-4)" strokeWidth={1.5} />}
             </div>
           )}
 

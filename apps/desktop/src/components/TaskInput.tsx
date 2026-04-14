@@ -131,11 +131,10 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
               <span
                 key={i}
                 style={{
-                  color: seg.color ?? "transparent",
-                  background: seg.color ? `${seg.color}20` : "transparent",
-                  borderRadius: seg.color ? "5px" : undefined,
-                  padding: seg.color ? "1px 5px" : undefined,
-                  boxShadow: seg.color ? `inset 0 0 0 1px ${seg.color}38` : undefined,
+                  color: seg.color ? "var(--amber)" : "var(--text-1)",
+                  background: seg.color ? "color-mix(in srgb, var(--amber) 20%, transparent)" : "transparent",
+                  boxShadow: seg.color ? "0 0 0 2px color-mix(in srgb, var(--amber) 20%, transparent)" : undefined,
+                  borderRadius: seg.color ? "4px" : undefined,
                 }}
               >
                 {seg.text}
@@ -161,7 +160,7 @@ export default function TaskInput({ onSubmit, inputRef }: TaskInputProps) {
           background: "transparent",
           border: "none",
           outline: "none",
-          color: "var(--text-1)",
+          color: "transparent",
           caretColor: "var(--amber)",
           position: "relative",
           zIndex: 1,

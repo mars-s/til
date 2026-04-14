@@ -19,6 +19,10 @@ pub fn parse(input: &str) -> ParsedTask {
     for rule in &rules {
         let Some(span) = rule.find_span(input) else { continue };
 
+        if !title_mask[span.start..span.end].iter().all(|&m| m) {
+            continue; // Overlaps with previous match
+        }
+
         match rule.rule.sets.as_str() {
             "scheduled_at" => {
                 if let Some(caps) = rule.captures(input) {
@@ -38,6 +42,38 @@ pub fn parse(input: &str) -> ParsedTask {
                         .unwrap_or_else(|| NaiveTime::from_hms_opt(9, 0, 0).unwrap());
                     task.scheduled_at = date_time_to_utc(date, time);
                     mask_range(&mut title_mask, span.start, span.end);
+                }
+            }
+            "scheduled_at_in_days" => {
+                if let Some(caps) = rule.captures(input) {
+                    if let Some(days) = caps.get(1).and_then(|m| m.as_str().parse::<u64>().ok()) {
+                        if let Some(date) = now.date_naive().checked_add_days(chrono::Days::new(days)) {
+                            let time = task.scheduled_at
+                                .and_then(|dt| Some(dt.with_timezone(&Local).time()))
+                                .unwrap_or_else(|| NaiveTime::from_hms_opt(9, 0, 0).unwrap());
+                            task.scheduled_at = date_time_to_utc(date, time);
+                            mask_range(&mut title_mask, span.start, span.end);
+                        }
+                    }
+                }
+            }
+            "scheduled_at_ordinal" => {
+                if let Some(caps) = rule.captures(input) {
+                    if let Some(day) = caps.get(1).and_then(|m| m.as_str().parse::<u32>().ok()) {
+                        let mut month = now.month();
+                        let mut year = now.year();
+                        if day < now.day() {
+                            month += 1;
+                            if month > 12 { month = 1; year += 1; }
+                        }
+                        if let Some(date) = NaiveDate::from_ymd_opt(year, month, day) {
+                            let time = task.scheduled_at
+                                .and_then(|dt| Some(dt.with_timezone(&Local).time()))
+                                .unwrap_or_else(|| NaiveTime::from_hms_opt(9, 0, 0).unwrap());
+                            task.scheduled_at = date_time_to_utc(date, time);
+                            mask_range(&mut title_mask, span.start, span.end);
+                        }
+                    }
                 }
             }
             "deadline_at" => {
@@ -85,7 +121,7 @@ pub fn parse(input: &str) -> ParsedTask {
         let start = full.start();
         let end = full.end();
         // Skip if already masked by another rule
-        if title_mask[start..end].iter().any(|&m| m) {
+        if title_mask[start..end].iter().all(|&m| m) {
             task.tags.push(cap[1].to_string());
             spans.push(Span { start, end, kind: crate::types::SpanKind::Tag });
             mask_range(&mut title_mask, start, end);

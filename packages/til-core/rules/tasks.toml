@@ -5,6 +5,12 @@ sets = "scheduled_at"
 span_kind = "Time"
 
 [[rules]]
+name = "time_at_implicit"
+pattern = "(?i)\\b(?:(?:at|@)\\s+)(\\d{1,2}(?::\\d{2})?)\\b"
+sets = "scheduled_at"
+span_kind = "Time"
+
+[[rules]]
 name = "deadline_by"
 pattern = "(?i)\\bby\\s+((?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|today|tomorrow|next\\s+\\w+)(?:\\s+\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)?)"
 sets = "deadline_at"
@@ -26,6 +32,18 @@ span_kind = "Date"
 name = "date_today"
 pattern = "(?i)\\btoday\\b"
 sets = "scheduled_at_date"
+span_kind = "Date"
+
+[[rules]]
+name = "date_in_days"
+pattern = "(?i)\\bin\\s+(\\d+)\\s+days?\\b"
+sets = "scheduled_at_in_days"
+span_kind = "Date"
+
+[[rules]]
+name = "date_ordinal"
+pattern = "(?i)\\b(?:on\\s+(?:the\\s+)?)?(\\d{1,2})(?:st|nd|rd|th)\\b"
+sets = "scheduled_at_ordinal"
 span_kind = "Date"
 
 [[rules]]
