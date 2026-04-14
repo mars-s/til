@@ -5,15 +5,23 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 export type TaskStatus = "Todo" | "InProgress" | "Done";
 export type Priority = "Low" | "Medium" | "High" | "Urgent";
 
+export interface Subtask {
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
-  status: TaskStatus;
-  priority: Priority;
+  status: "Todo" | "InProgress" | "Done";
+  priority: "Urgent" | "High" | "Medium" | "Low";
   scheduled_at: string | null;
   deadline_at: string | null;
+  created_at: string;
   duration_minutes: number | null;
   tags: string[];
+  description: string | null;
+  subtasks: Subtask[];
 }
 
 export interface CalendarEvent {

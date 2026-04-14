@@ -1,5 +1,5 @@
 import { getSupabase } from './supabase';
-import type { Task, CalendarEvent } from './invoke';
+import type { Task, Subtask, CalendarEvent } from './invoke';
 
 export async function fetchTasks(): Promise<Task[]> {
   const supabase = await getSupabase();
@@ -22,7 +22,10 @@ export async function fetchTasks(): Promise<Task[]> {
     scheduled_at: row.scheduled_at ?? null,
     deadline_at: row.deadline_at ?? null,
     duration_minutes: row.duration_minutes ?? null,
+    created_at: row.created_at,
     tags: row.tags ?? [],
+    description: row.description ?? null,
+    subtasks: row.subtasks ?? [],
   }));
 }
 
@@ -47,11 +50,13 @@ export async function insertTask(task: Omit<Task, 'id'>): Promise<Task> {
       deadline_at: task.deadline_at,
       duration_minutes: task.duration_minutes,
       tags: task.tags,
+      description: task.description,
+      subtasks: task.subtasks,
     })
     .select()
     .single();
   if (error) throw error;
-  return { ...task, id: data.id };
+  return { ...task, id: data.id, created_at: data.created_at };
 }
 
 export async function updateTaskStatus(
@@ -60,6 +65,30 @@ export async function updateTaskStatus(
 ): Promise<void> {
   const supabase = await getSupabase();
   const { error } = await supabase.from('tasks').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTaskTitle(id: string, title: string): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.from('tasks').update({ title }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTaskDescription(id: string, description: string | null): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.from('tasks').update({ description }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTaskSubtasks(id: string, subtasks: Subtask[]): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.from('tasks').update({ subtasks }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateTaskDate(id: string, scheduled_at: string | null): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.from('tasks').update({ scheduled_at }).eq('id', id);
   if (error) throw error;
 }
 
