@@ -10,20 +10,6 @@ interface UpcomingViewProps {
   onUpdateTask?: (id: string, updates: Partial<Task>) => void;
 }
 
-const PRIORITY_COLORS: Record<string, string> = {
-  Urgent: "var(--p-urgent)",
-  High: "var(--p-high)",
-  Medium: "var(--p-medium)",
-  Low: "var(--p-low)",
-};
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function getDayString(dateStr: string) {
   const d = new Date(dateStr);
   const today = new Date();

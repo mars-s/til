@@ -27,7 +27,7 @@ export default function EventBlock({
   style,
   onClick,
 }: EventBlockProps) {
-  const color = event.color ?? "var(--sky)";
+  const color = event.color || "#5b9cf0"; // fallback to sky blue
   const isSuggestion = event.is_suggestion;
   const h = Math.max(height, 20);
 
@@ -43,8 +43,8 @@ export default function EventBlock({
         overflow: "hidden",
         cursor: "pointer",
         userSelect: "none",
-        background: isSuggestion ? "transparent" : `${color}22`,
-        border: isSuggestion ? `1.5px dashed ${color}` : `1px solid ${color}40`,
+        background: isSuggestion ? "transparent" : `${color}35`,
+        border: isSuggestion ? `1.5px dashed ${color}` : `1px solid ${color}60`,
         opacity: isSuggestion ? 0.75 : 1,
         padding: "3px 7px",
         transition: "all 0.15s ease",
@@ -72,7 +72,7 @@ export default function EventBlock({
           fontFamily: "var(--font-ui)",
           fontSize: 11,
           fontWeight: 500,
-          color,
+          color: "#f0e8dc",
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -86,7 +86,7 @@ export default function EventBlock({
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 10,
-            color: "var(--text-2)",
+            color: "#a89880",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",

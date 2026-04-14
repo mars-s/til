@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import WeekView from "./calendar/Week";
 import MonthView from "./calendar/Month";
 import CalendarSidebar from "../components/CalendarSidebar";
-import { type CalendarEvent, type Task, createEvent } from "../lib/invoke";
+import { type CalendarEvent, type Task } from "../lib/invoke";
+import { getSupabase } from "../lib/supabase";
 import { fetchTasks, fetchEvents, fetchCalendars, updateTaskDate } from "../lib/db";
 
 type CalView = "week" | "month";
@@ -37,8 +38,14 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "w") onCalViewChange("week");
-      if (e.key === "m") onCalViewChange("month");
+      if (e.key === "w") {
+        e.preventDefault();
+        onCalViewChange("week");
+      }
+      if (e.key === "m") {
+        e.preventDefault();
+        onCalViewChange("month");
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -57,6 +64,31 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
   const scheduledTasks = tasks.filter(
     (t) => t.scheduled_at !== null && t.status !== "Done",
   );
+
+  const handleEventCreate = async (title: string, startAt: string, endAt: string) => {
+    try {
+      const supabase = await getSupabase();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Call edge function to create in Google Calendar
+      const { data: _createData, error } = await supabase.functions.invoke('create-calendar-event', {
+        body: {
+          title,
+          start_at: startAt,
+          end_at: endAt,
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh events from DB
+      const freshEvents = await fetchEvents();
+      setEvents(freshEvents);
+    } catch (err) {
+      console.error('Failed to create event:', err);
+    }
+  };
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
@@ -132,10 +164,7 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
                 ),
               );
             }}
-            onEventCreate={async (title, startAt, endAt) => {
-              const newEvent = await createEvent({ title, startAt, endAt });
-              setEvents((prev) => [...prev, newEvent]);
-            }}
+            onEventCreate={handleEventCreate}
           />
         ) : (
           <MonthView events={events} tasks={scheduledTasks} onDayClick={handleDayClick} />

@@ -4,7 +4,6 @@ import { Session, createClient } from '@supabase/supabase-js';
 import {
   getSupabase,
   loadStoredSession,
-  setSessionFromTokens,
   signOut as sbSignOut,
 } from '../lib/supabase';
 import { invoke } from '@tauri-apps/api/core';

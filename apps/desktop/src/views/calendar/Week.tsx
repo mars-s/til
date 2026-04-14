@@ -379,13 +379,16 @@ export default function WeekView({ events, tasks, onDayClick, onTaskSchedule, on
                   if (!scheduledTime) return null;
                   const minutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
                   const top = (minutes / 60) * HOUR_HEIGHT;
-                  const height = task.duration_minutes ? (task.duration_minutes / 60) * HOUR_HEIGHT : HOUR_HEIGHT;
+                  // Use duration_minutes if set, otherwise auto-size based on content (min 24px)
+                  const height = task.duration_minutes 
+                    ? Math.max((task.duration_minutes / 60) * HOUR_HEIGHT, 24)
+                    : 24;
                   return (
                     <TaskBlock
                       key={task.id}
                       task={task}
                       top={top}
-                      height={Math.max(height, 24)}
+                      height={height}
                     />
                   );
                 })}

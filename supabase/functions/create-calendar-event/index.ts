@@ -1,11 +1,17 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 // Creates a Google Calendar event when a task is given a scheduled_at time.
 // Stores the resulting google_event_id back on the task row.
 
 interface CreateEventRequest {
-  task_id: string;
+  task_id?: string;
   title: string;
   start_at: string; // ISO8601
   end_at?: string;
@@ -86,20 +92,25 @@ function addMinutes(isoDate: string, minutes: number): string {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return new Response('Unauthorized', { status: 401 });
+  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
   let body: CreateEventRequest;
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON body', { status: 400 });
+    return new Response('Invalid JSON body', { status: 400, headers: corsHeaders });
   }
 
   const { task_id, title, start_at, end_at: requestedEndAt, duration_minutes } = body;
 
-  if (!task_id || !title || !start_at) {
-    return new Response('Missing required fields: task_id, title, start_at', { status: 400 });
+  if (!title || !start_at) {
+    return new Response('Missing required fields: title, start_at', { status: 400, headers: corsHeaders });
   }
 
   // Service-role client used for all DB operations, but auth header passed so
@@ -111,7 +122,7 @@ serve(async (req) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response('Unauthorized', { status: 401 });
+  if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
   // 1. Get the user's primary "Til" calendar
   const { data: calendar, error: calendarError } = await supabase
@@ -124,7 +135,7 @@ serve(async (req) => {
   if (calendarError || !calendar || !calendar.google_calendar_id) {
     return new Response(
       JSON.stringify({ error: 'Run google-calendar-setup first' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }
 
@@ -136,7 +147,7 @@ serve(async (req) => {
     console.error('Token error:', err);
     return new Response(
       JSON.stringify({ error: 'Failed to obtain Google access token' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }
 
@@ -171,7 +182,7 @@ serve(async (req) => {
     console.error(`Google Calendar API error: ${googleResp.status} ${errBody}`);
     return new Response(
       JSON.stringify({ error: 'Google Calendar API error', detail: errBody }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }
 
@@ -199,26 +210,27 @@ serve(async (req) => {
     console.error('Failed to insert calendar_event:', insertError?.message);
     return new Response(
       JSON.stringify({ error: 'Failed to save calendar event' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }
 
   const calendarEventId: string = insertedEvent.id;
 
   // 6. Link the Google event back to the task (scoped to the authenticated user)
-  const { error: taskUpdateError } = await supabase
-    .from('tasks')
-    .update({ calendar_event_id: googleEventId })
-    .eq('id', task_id)
-    .eq('user_id', user.id);
+  if (task_id) {
+    const { error: taskUpdateError } = await supabase
+      .from('tasks')
+      .update({ calendar_event_id: googleEventId })
+      .eq('id', task_id)
+      .eq('user_id', user.id);
 
-  if (taskUpdateError) {
-    console.error('Failed to update task.calendar_event_id:', taskUpdateError.message);
-    // Non-fatal: the calendar event was created successfully; log and continue.
+    if (taskUpdateError) {
+      console.error('Failed to update task.calendar_event_id:', taskUpdateError.message);
+    }
   }
 
   return new Response(
     JSON.stringify({ ok: true, google_event_id: googleEventId, calendar_event_id: calendarEventId }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } },
+    { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
   );
 });

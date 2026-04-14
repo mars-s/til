@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, type RefObject } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import * as chrono from "chrono-node";
 import {
   startOfMonth,
@@ -21,7 +21,6 @@ interface DeadlinePopoverProps {
   anchorRef?: RefObject<HTMLDivElement | null>;
   initialDate?: string | null;
   onSelect: (isoDate: string | null) => void;
-  onClose: () => void;
 }
 
 interface Suggestion {
@@ -38,14 +37,13 @@ function getRelativeDaysText(diff: number) {
   return `${Math.abs(diff)} days ago`;
 }
 
-export default function DeadlinePopover({ initialDate, onSelect, onClose }: DeadlinePopoverProps) {
+export default function DeadlinePopover({ initialDate, onSelect }: DeadlinePopoverProps) {
   const [inputText, setInputText] = useState("");
   const [currentMonth, setCurrentMonth] = useState(
     initialDate ? new Date(initialDate) : new Date()
   );
   
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,11 +59,8 @@ export default function DeadlinePopover({ initialDate, onSelect, onClose }: Dead
     
     if (inputText.trim().length <= 1) {
       setSuggestions([]);
-      setIsTyping(false);
       return;
     }
-
-    setIsTyping(true);
     
     // Non-blocking parse
     debounceRef.current = setTimeout(async () => {
@@ -104,8 +99,8 @@ export default function DeadlinePopover({ initialDate, onSelect, onClose }: Dead
         
         setSuggestions(results);
         setSelectedIndex(0);
-      } finally {
-        setIsTyping(false);
+      } catch {
+        // Ignore parsing errors
       }
     }, 150);
     

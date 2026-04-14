@@ -180,16 +180,16 @@ pub fn get_events(state: State<AppState>) -> Vec<CalendarEvent> {
 pub fn create_event(
     state: State<AppState>,
     title: String,
-    start_at: DateTime<Utc>,
-    end_at: DateTime<Utc>,
+    start_at: String,
+    end_at: String,
     is_suggestion: Option<bool>,
     color: Option<String>,
 ) -> CalendarEvent {
     let event = CalendarEvent {
         id: Uuid::new_v4(),
         title,
-        start_at,
-        end_at,
+        start_at: start_at.parse().unwrap_or_else(|_| Utc::now()),
+        end_at: end_at.parse().unwrap_or_else(|_| Utc::now()),
         is_suggestion: is_suggestion.unwrap_or(false),
         color,
     };

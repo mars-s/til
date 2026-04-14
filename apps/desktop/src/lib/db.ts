@@ -8,7 +8,7 @@ export async function fetchTasks(): Promise<Task[]> {
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('id,user_id,title,status,priority,scheduled_at,deadline_at,duration_minutes,tags,description,created_at,updated_at')
+    .select('id,user_id,title,status,priority,scheduled_at,deadline_at,duration_minutes,tags,description,created_at,updated_at,subtasks')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
   if (error) {
@@ -32,6 +32,7 @@ export async function fetchTasks(): Promise<Task[]> {
     created_at: row.created_at,
     tags: row.tags ?? [],
     description: row.description ?? null,
+    subtasks: row.subtasks ?? [],
   }));
 }
 

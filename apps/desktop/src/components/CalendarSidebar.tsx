@@ -15,9 +15,9 @@ interface CalendarSidebarProps {
 }
 
 const CALENDARS = [
-  { name: "Til", color: "var(--amber)" },
-  { name: "Personal", color: "var(--jade)" },
-  { name: "Work", color: "var(--sky)" },
+  { id: "default-til", name: "Til", color: "var(--amber)" },
+  { id: "default-personal", name: "Personal", color: "var(--jade)" },
+  { id: "default-work", name: "Work", color: "var(--sky)" },
 ];
 
 export default function CalendarSidebar({ unscheduledTasks, onTaskClick, onTaskDragStart, calendars = CALENDARS }: CalendarSidebarProps) {

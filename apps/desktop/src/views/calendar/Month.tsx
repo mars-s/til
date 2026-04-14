@@ -161,6 +161,7 @@ export default function MonthView({ events, tasks, onDayClick }: MonthViewProps)
           >
             {week.map((day, di) => {
               const dayEvents = eventsOnDay(day);
+              const dayTasks = tasksOnDay(day);
               const isToday = isSameDay(day, today);
               const inMonth = isSameMonth(day, current);
 
@@ -212,9 +213,9 @@ export default function MonthView({ events, tasks, onDayClick }: MonthViewProps)
                   </div>
 
                   {/* Event pills */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    {dayEvents.slice(0, 3).map((ev) => {
-                      const color = ev.color ?? "var(--sky)";
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
+                    {dayEvents.slice(0, 2).map((ev) => {
+                      const color = ev.color ?? "#5b9cf0";
                       return (
                         <div
                           key={ev.id}
@@ -227,16 +228,38 @@ export default function MonthView({ events, tasks, onDayClick }: MonthViewProps)
                             fontSize: 10,
                             padding: "1px 5px",
                             borderRadius: 3,
-                            background: ev.is_suggestion ? "transparent" : `${color}28`,
+                            background: ev.is_suggestion ? "transparent" : `${color}30`,
                             border: ev.is_suggestion ? `1px dashed ${color}` : "none",
-                            color,
+                            color: "#f0e8dc",
                           }}
                         >
                           {ev.title}
                         </div>
                       );
                     })}
-                    {dayEvents.length > 3 && (
+                    {dayTasks.slice(0, 2 - dayEvents.slice(0, 2).length).map((task) => {
+                      const color = "#e8a842"; // amber for tasks
+                      return (
+                        <div
+                          key={task.id}
+                          title={task.title}
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            fontFamily: "var(--font-ui)",
+                            fontSize: 10,
+                            padding: "1px 5px",
+                            borderRadius: 3,
+                            background: `${color}30`,
+                            color: "#f0e8dc",
+                          }}
+                        >
+                          {task.title}
+                        </div>
+                      );
+                    })}
+                    {(dayEvents.length + dayTasks.length) > 2 && (
                       <div
                         style={{
                           fontFamily: "var(--font-mono)",
@@ -245,7 +268,7 @@ export default function MonthView({ events, tasks, onDayClick }: MonthViewProps)
                           paddingLeft: 4,
                         }}
                       >
-                        +{dayEvents.length - 3}
+                        +{dayEvents.length + dayTasks.length - 2}
                       </div>
                     )}
                   </div>

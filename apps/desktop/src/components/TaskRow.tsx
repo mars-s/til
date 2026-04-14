@@ -423,7 +423,6 @@ export default function TaskRow({ task, onToggle, onDelete, onUpdateDate, onUpda
                     anchorRef={anchorRef}
                     initialDate={task.scheduled_at}
                     onSelect={(d) => { onUpdateDate(task.id, d); setShowDatePicker(false); }}
-                    onClose={() => setShowDatePicker(false)}
                   />
                 )}
                 {showTagPicker && (
@@ -439,7 +438,6 @@ export default function TaskRow({ task, onToggle, onDelete, onUpdateDate, onUpda
                     anchorRef={anchorRef}
                     initialDate={task.deadline_at}
                     onSelect={() => setShowDeadlinePicker(false)}
-                    onClose={() => setShowDeadlinePicker(false)}
                   />
                 )}
 

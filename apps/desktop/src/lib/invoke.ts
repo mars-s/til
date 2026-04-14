@@ -122,9 +122,9 @@ export interface CreateEventArgs {
 export function createEvent(args: CreateEventArgs): Promise<CalendarEvent> {
   return tauriInvoke<CalendarEvent>("create_event", {
     title: args.title,
-    start_at: args.startAt,
-    end_at: args.endAt,
-    is_suggestion: args.isSuggestion ?? false,
+    startAt: args.startAt,
+    endAt: args.endAt,
+    isSuggestion: args.isSuggestion ?? false,
     color: args.color ?? null,
   });
 }
