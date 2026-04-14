@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import WeekView from "./calendar/Week";
 import MonthView from "./calendar/Month";
 import CalendarSidebar from "../components/CalendarSidebar";
-import { type CalendarEvent, type Task } from "../lib/invoke";
-import { fetchTasks, fetchEvents } from "../lib/db";
+import { type CalendarEvent, type Task, createEvent } from "../lib/invoke";
+import { fetchTasks, fetchEvents, fetchCalendars, updateTaskDate } from "../lib/db";
 
 type CalView = "week" | "month";
 
@@ -15,16 +15,19 @@ interface CalendarProps {
 export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [calendars, setCalendars] = useState<{ id: string; name: string; color: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetchEvents(),
       fetchTasks(),
+      fetchCalendars(),
     ])
-      .then(([evs, tsks]) => {
+      .then(([evs, tsks, cals]) => {
         setEvents(evs);
         setTasks(tsks);
+        setCalendars(cals);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -50,12 +53,19 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
     (t) => t.scheduled_at === null && t.status !== "Done",
   );
 
+  // Scheduled tasks (with time) to show on calendar
+  const scheduledTasks = tasks.filter(
+    (t) => t.scheduled_at !== null && t.status !== "Done",
+  );
+
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
       {/* Sidebar */}
       <CalendarSidebar
         unscheduledTasks={unscheduledTasks}
         onTaskClick={() => {}}
+        onTaskDragStart={() => {}}
+        calendars={calendars}
       />
 
       {/* Main calendar area */}
@@ -110,9 +120,25 @@ export default function Calendar({ calView, onCalViewChange }: CalendarProps) {
             loading…
           </div>
         ) : calView === "week" ? (
-          <WeekView events={events} onDayClick={handleDayClick} />
+          <WeekView
+            events={events}
+            tasks={scheduledTasks}
+            onDayClick={handleDayClick}
+            onTaskSchedule={async (taskId, scheduledAt) => {
+              await updateTaskDate(taskId, scheduledAt);
+              setTasks((prev) =>
+                prev.map((t) =>
+                  t.id === taskId ? { ...t, scheduled_at: scheduledAt } : t,
+                ),
+              );
+            }}
+            onEventCreate={async (title, startAt, endAt) => {
+              const newEvent = await createEvent({ title, startAt, endAt });
+              setEvents((prev) => [...prev, newEvent]);
+            }}
+          />
         ) : (
-          <MonthView events={events} onDayClick={handleDayClick} />
+          <MonthView events={events} tasks={scheduledTasks} onDayClick={handleDayClick} />
         )}
       </div>
     </div>

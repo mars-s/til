@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { Session } from '@supabase/supabase-js';
+import { Session, createClient } from '@supabase/supabase-js';
 import {
   getSupabase,
   loadStoredSession,
@@ -37,28 +37,42 @@ export function useAuth() {
           throw error;
         }
         console.log('[oauth] success! user:', data.session?.user?.email);
-        if (data.session) {
-          await invoke('save_session', {
-            accessToken: data.session.access_token,
-            refreshToken: data.session.refresh_token,
-          });
-          setSession(data.session);
-          
-          if (data.session.provider_token) {
-            console.log('[oauth] setting up google calendar with edge function...');
-            const { error: setupError } = await supabase.functions.invoke('google-calendar-setup', {
-              body: {
-                provider_token: data.session.provider_token,
-                provider_refresh_token: data.session.provider_refresh_token,
-              }
+          if (data.session) {
+            await invoke('save_session', {
+              accessToken: data.session.access_token,
+              refreshToken: data.session.refresh_token,
             });
-            if (setupError) {
-              console.error('[oauth] edge function error:', setupError);
-            } else {
-              console.log('[oauth] edge function setup complete.');
+            setSession(data.session);
+            
+            if (data.session.provider_token) {
+              console.log('[oauth] setting up google calendar with edge function...');
+              // Small delay to ensure session is fully established
+              await new Promise(r => setTimeout(r, 100));
+              
+              // Create a client with the session to ensure auth header is included
+              const supabaseWithAuth = createClient(
+                import.meta.env.VITE_SUPABASE_URL as string,
+                import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+                {
+                  global: { headers: { Authorization: `Bearer ${data.session.access_token}` } },
+                  auth: { persistSession: false }
+                }
+              );
+              
+              const { data: setupData, error: setupError } = await supabaseWithAuth.functions.invoke('google-calendar-setup', {
+                body: {
+                  provider_token: data.session.provider_token,
+                  provider_refresh_token: data.session.provider_refresh_token,
+                }
+              });
+              console.log('[oauth] setup response:', setupData, setupError);
+              if (setupError) {
+                console.error('[oauth] edge function error:', setupError);
+              } else {
+                console.log('[oauth] edge function setup complete.');
+              }
             }
           }
-        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : JSON.stringify(e);
         console.error('[oauth] exchange failed:', msg);

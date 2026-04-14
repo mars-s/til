@@ -3,11 +3,18 @@ import type { Task, Subtask, CalendarEvent } from './invoke';
 
 export async function fetchTasks(): Promise<Task[]> {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('tasks')
-    .select('*')
+    .select('id,user_id,title,status,priority,scheduled_at,deadline_at,duration_minutes,tags,description,created_at,updated_at')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
-  if (error) throw error;
+  if (error) {
+    console.error('fetchTasks error:', error);
+    throw error;
+  }
   return (data ?? []).map((row) => ({
     id: row.id,
     title: row.title,
@@ -25,7 +32,6 @@ export async function fetchTasks(): Promise<Task[]> {
     created_at: row.created_at,
     tags: row.tags ?? [],
     description: row.description ?? null,
-    subtasks: row.subtasks ?? [],
   }));
 }
 
@@ -64,45 +70,67 @@ export async function updateTaskStatus(
   status: 'todo' | 'in_progress' | 'done',
 ): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ status }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ status }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function updateTaskTitle(id: string, title: string): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ title }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ title }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function updateTaskDescription(id: string, description: string | null): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ description }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ description }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function updateTaskSubtasks(id: string, subtasks: Subtask[]): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ subtasks }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ subtasks }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function updateTaskDate(id: string, scheduled_at: string | null): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ scheduled_at }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ scheduled_at }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function updateTaskTags(id: string, tags: string[]): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').update({ tags }).eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').update({ tags }).eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function fetchTags(): Promise<string[]> {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('user_tags')
     .select('name')
+    .eq('user_id', user.id)
     .order('name');
   if (error) throw error;
   return (data ?? []).map((r) => r.name);
@@ -120,17 +148,26 @@ export async function ensureTag(name: string): Promise<void> {
 
 export async function removeTask(id: string): Promise<void> {
   const supabase = await getSupabase();
-  const { error } = await supabase.from('tasks').delete().eq('id', id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('tasks').delete().eq('id', id).eq('user_id', user.id);
   if (error) throw error;
 }
 
 export async function fetchEvents(): Promise<CalendarEvent[]> {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('calendar_events')
     .select('*, calendars(name, color)')
     .order('start_at', { ascending: true });
-  if (error) throw error;
+  if (error) {
+    console.error('fetchEvents error:', error);
+    throw error;
+  }
   return (data ?? []).map((row) => ({
     id: row.id,
     title: row.title,
@@ -138,5 +175,24 @@ export async function fetchEvents(): Promise<CalendarEvent[]> {
     end_at: row.end_at ?? row.start_at,
     is_suggestion: row.is_suggestion,
     color: row.calendars?.color ?? null,
+    calendar_name: row.calendars?.name ?? null,
+  }));
+}
+
+export async function fetchCalendars(): Promise<{ id: string; name: string; color: string }[]> {
+  const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('calendars')
+    .select('id, name, color')
+    .eq('user_id', user.id)
+    .order('name');
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    color: row.color,
   }));
 }

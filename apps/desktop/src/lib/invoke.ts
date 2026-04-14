@@ -31,6 +31,7 @@ export interface CalendarEvent {
   end_at: string;
   is_suggestion: boolean;
   color: string | null;
+  calendar_name: string | null;
 }
 
 export type SpanKind = "Time" | "Date" | "Duration" | "Priority" | "Tag" | "Recurrence";

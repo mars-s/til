@@ -19,9 +19,33 @@ interface SetupRequestBody {
   expires_at?: string; // ISO8601
 }
 
-interface GoogleCalendarListItem {
-  id: string;
-  summary: string;
+/** Fetch all calendars from Google Calendar API */
+async function fetchAllCalendars(
+  accessToken: string,
+): Promise<GoogleCalendarListItem[]> {
+  const calendars: GoogleCalendarListItem[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({ maxResults: '250' });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/users/me/calendarList?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Failed to list calendars: ${res.status} ${JSON.stringify(err)}`);
+    }
+
+    const body = await res.json();
+    if (body.items) calendars.push(...body.items);
+    pageToken = body.nextPageToken;
+  } while (pageToken);
+
+  return calendars;
 }
 
 interface GoogleCalendarEvent {
@@ -36,6 +60,13 @@ interface GoogleEventsListResponse {
   items?: GoogleCalendarEvent[];
   nextSyncToken?: string;
   nextPageToken?: string;
+}
+
+interface GoogleCalendarListItem {
+  id: string;
+  summary: string;
+  backgroundColor?: string;
+  foregroundColor?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,12 +169,25 @@ async function fetchAllEvents(
 }
 
 // ---------------------------------------------------------------------------
+// CORS headers
+// ---------------------------------------------------------------------------
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
 
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
   }
 
   // ------------------------------------------------------------------
@@ -153,7 +197,7 @@ serve(async (req) => {
   if (!authHeader) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 
@@ -174,7 +218,7 @@ serve(async (req) => {
   if (userError || !user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 
@@ -207,7 +251,7 @@ serve(async (req) => {
           error:
             'No Google token found. Pass provider_token from your Supabase session in the request body.',
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
       );
     }
 
@@ -229,7 +273,7 @@ serve(async (req) => {
       console.error('Failed to store user tokens:', upsertErr.message);
       return new Response(
         JSON.stringify({ error: `Failed to store tokens: ${upsertErr.message}` }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } },
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
       );
     }
 
@@ -246,7 +290,7 @@ serve(async (req) => {
     console.error('Token fetch/refresh error:', err);
     return new Response(
       JSON.stringify({ error: `Could not obtain valid Google token: ${(err as Error).message}` }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }
 
@@ -293,7 +337,7 @@ serve(async (req) => {
       console.error('Failed to create Til calendar:', errBody);
       return new Response(
         JSON.stringify({ error: `Failed to create Google calendar: ${JSON.stringify(errBody)}` }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } },
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
       );
     }
 
@@ -320,7 +364,7 @@ serve(async (req) => {
       console.error('Failed to insert calendar row:', insertCalErr?.message);
       return new Response(
         JSON.stringify({ error: `Failed to save calendar: ${insertCalErr?.message}` }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } },
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
       );
     }
 
@@ -379,6 +423,87 @@ serve(async (req) => {
   }
 
   // ------------------------------------------------------------------
+  // 6b. Fetch all Google calendars and sync their events
+  // ------------------------------------------------------------------
+  try {
+    const googleCals = await fetchAllCalendars(accessToken);
+    console.log(`Found ${googleCals.length} calendars for user`);
+
+    for (const gCal of googleCals) {
+      // Check if this calendar already exists in our DB
+      const { data: existingCal } = await serviceClient
+        .from('calendars')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('google_calendar_id', gCal.id)
+        .maybeSingle();
+
+      let calRowId: string;
+
+      if (existingCal) {
+        calRowId = existingCal.id;
+        // Update color if changed
+        await serviceClient
+          .from('calendars')
+          .update({ color: gCal.backgroundColor || '#4285F4' })
+          .eq('id', calRowId);
+      } else {
+        // Insert new calendar
+        const { data: insertedCal, error: insertCalErr } = await serviceClient
+          .from('calendars')
+          .insert({
+            user_id: user.id,
+            name: gCal.summary,
+            google_calendar_id: gCal.id,
+            color: gCal.backgroundColor || '#4285F4',
+            is_primary: gCal.id === 'primary',
+          })
+          .select('id')
+          .single();
+
+        if (insertCalErr || !insertedCal) {
+          console.error(`Failed to insert calendar ${gCal.summary}:`, insertCalErr?.message);
+          continue;
+        }
+        calRowId = insertedCal.id;
+      }
+
+      // Fetch events from this calendar
+      const { events } = await fetchAllEvents(gCal.id, accessToken);
+
+      if (events.length > 0) {
+        const rows = events
+          .filter((e) => e.status !== 'cancelled' && (e.start?.dateTime || e.start?.date))
+          .map((e) => ({
+            calendar_id: calRowId,
+            google_event_id: e.id,
+            title: e.summary ?? '(no title)',
+            start_at: e.start!.dateTime ?? e.start!.date!,
+            end_at: e.end?.dateTime ?? e.end?.date ?? null,
+            is_task_block: false,
+            is_suggestion: false,
+            raw_json: e,
+            updated_at: new Date().toISOString(),
+          }));
+
+        if (rows.length > 0) {
+          const { error: upsertErr } = await serviceClient
+            .from('calendar_events')
+            .upsert(rows, { onConflict: 'calendar_id,google_event_id', ignoreDuplicates: false });
+
+          if (upsertErr) {
+            console.error(`Failed to upsert events for ${gCal.summary}:`, upsertErr.message);
+          } else {
+            console.log(`Synced ${rows.length} events from ${gCal.summary}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to sync all calendars:', err);
+  }
+
+  // ------------------------------------------------------------------
   // 7. Register (or renew) push webhook with Google
   // ------------------------------------------------------------------
   const webhookUrl = Deno.env.get('GOOGLE_WEBHOOK_URL')!;
@@ -419,7 +544,7 @@ serve(async (req) => {
           google_calendar_id: googleCalendarId,
           warning: `Webhook registration failed: ${JSON.stringify(errBody)}`,
         }),
-        { headers: { 'Content-Type': 'application/json' } },
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders } },
       );
     }
 
@@ -457,6 +582,6 @@ serve(async (req) => {
       calendar_id: calendarRowId,
       google_calendar_id: googleCalendarId,
     }),
-    { headers: { 'Content-Type': 'application/json' } },
+    { headers: { 'Content-Type': 'application/json', ...corsHeaders } },
   );
 });

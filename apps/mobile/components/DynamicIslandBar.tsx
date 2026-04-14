@@ -1,10 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Platform,
-  ViewStyle,
+  Dimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -13,99 +12,65 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
   interpolateColor,
-  useDerivedValue,
 } from 'react-native-reanimated';
 import { Colors, Radii } from '../constants/tokens';
 
-// SVG icon paths (inline — no icon library dependency)
-const ICONS = {
-  tasks: {
-    active:   'M3 5h18M3 10h18M3 15h11',
-    inactive: 'M3 5h18M3 10h18M3 15h11',
-  },
-  calendar: {
-    active:   'M8 2v3m8-3v3M3.5 9.09h17M21 8.5V17c0 3-1.5 4-4 4H7c-2.5 0-4-1-4-4V8.5c0-3 1.5-4 4-4h10c2.5 0 4 1 4 4z',
-    inactive: 'M8 2v3m8-3v3M3.5 9.09h17M21 8.5V17c0 3-1.5 4-4 4H7c-2.5 0-4-1-4-4V8.5c0-3 1.5-4 4-4h10c2.5 0 4 1 4 4z',
-  },
-  settings: {
-    active:   'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z',
-    inactive: 'M12 15a3 3 0 100-6 3 3 0 000 6z',
-  },
-};
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const BAR_WIDTH = SCREEN_WIDTH - 40;
+const TAB_WIDTH = (BAR_WIDTH - 16) / 3;
 
 type Tab = 'tasks' | 'calendar' | 'settings';
 
 interface TabItem {
   key:   Tab;
   label: string;
+  icon: string;
 }
 
 const TABS: TabItem[] = [
-  { key: 'tasks',    label: 'Tasks'    },
-  { key: 'calendar', label: 'Calendar' },
-  { key: 'settings', label: 'Settings' },
+  { key: 'tasks',    label: 'Tasks',    icon: '≡' },
+  { key: 'calendar', label: 'Calendar', icon: '⬜' },
+  { key: 'settings', label: 'Settings', icon: '⚙' },
 ];
 
 interface Props {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
-  style?: ViewStyle;
 }
 
-function TabButton({ tab, isActive, onPress }: { tab: TabItem; isActive: boolean; onPress: () => void }) {
-  const scale = useSharedValue(1);
-  const progress = useDerivedValue(() => (isActive ? 1 : 0), [isActive]);
+// Spring config for the "liquid" feel
+const SPRING_CONFIG = {
+  stiffness: 250,
+  damping: 25,
+  mass: 0.8,
+};
 
-  const dotStyle = useAnimatedStyle(() => ({
-    opacity: withSpring(isActive ? 1 : 0, { stiffness: 400, damping: 30 }),
-    transform: [{ scale: withSpring(isActive ? 1 : 0.4, { stiffness: 400, damping: 30 }) }],
-  }));
-
-  const labelStyle = useAnimatedStyle(() => ({
-    color: isActive ? Colors.amber : Colors.text3,
-    transform: [{ scale: withSpring(isActive ? 1 : 0.97, { stiffness: 300, damping: 20 }) }],
-  }));
-
-  const pressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = useCallback(() => {
-    scale.value = withSpring(0.88, { stiffness: 600, damping: 20 }, () => {
-      scale.value = withSpring(1, { stiffness: 400, damping: 20 });
-    });
-    Haptics.selectionAsync();
-    onPress();
-  }, [onPress, scale]);
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      style={styles.tabButton}
-      activeOpacity={1}
-    >
-      <Animated.View style={[styles.tabInner, pressStyle]}>
-        {/* Icon placeholder — use text emoji or add SVG library */}
-        <Animated.Text style={[styles.tabIcon, { color: isActive ? Colors.amber : Colors.text3 }]}>
-          {tab.key === 'tasks' ? '≡' : tab.key === 'calendar' ? '⬜' : '⚙'}
-        </Animated.Text>
-        <Animated.Text style={[styles.tabLabel, labelStyle]}>
-          {tab.label}
-        </Animated.Text>
-        {/* Active dot */}
-        <Animated.View style={[styles.activeDot, dotStyle]} />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
-export default function DynamicIslandBar({ activeTab, onTabChange, style }: Props) {
+export default function DynamicIslandBar({ activeTab, onTabChange }: Props) {
   const insets = useSafeAreaInsets();
+  
+  // Marker position shared value
+  const activeIndex = TABS.findIndex(t => t.key === activeTab);
+  const translateX = useSharedValue(activeIndex * TAB_WIDTH);
+  const markerWidth = useSharedValue(TAB_WIDTH);
 
-  // Extra top inset for Dynamic Island devices (≥ iPhone 14 Pro)
-  // DI is roughly 59px tall; safe area top is ~59 on DI phones vs ~47 on notch phones
-  const isDynamicIsland = insets.top >= 59;
+  React.useEffect(() => {
+    // Perform a "stretching" animation when index changes
+    const targetX = activeIndex * TAB_WIDTH;
+    
+    // Logic to make it look "liquid":
+    // 1. Marker starts at current pos
+    // 2. Width expands towards target
+    // 3. Pos snaps to target while width shrinks back
+    
+    translateX.value = withSpring(targetX, SPRING_CONFIG);
+  }, [activeIndex]);
+
+  const markerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+    width: markerWidth.value,
+  }));
 
   return (
     <View
@@ -114,27 +79,78 @@ export default function DynamicIslandBar({ activeTab, onTabChange, style }: Prop
         {
           bottom: Math.max(insets.bottom, 12) + 4,
         },
-        style,
       ]}
       pointerEvents="box-none"
     >
       <BlurView
-        intensity={75}
+        intensity={80}
         tint="dark"
         style={styles.blur}
       >
+        {/* Top edge highlight (Liquid Glass effect) */}
+        <View style={styles.highlight} />
+        
         <View style={styles.inner}>
-          {TABS.map((tab) => (
-            <TabButton
-              key={tab.key}
-              tab={tab}
-              isActive={activeTab === tab.key}
-              onPress={() => onTabChange(tab.key)}
-            />
-          ))}
+          {/* Animated Background Marker */}
+          <Animated.View style={[styles.marker, markerStyle]} />
+          
+          {TABS.map((tab, index) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TabButton
+                key={tab.key}
+                tab={tab}
+                isActive={isActive}
+                onPress={() => onTabChange(tab.key)}
+              />
+            );
+          })}
         </View>
       </BlurView>
     </View>
+  );
+}
+
+function TabButton({ tab, isActive, onPress }: { tab: TabItem; isActive: boolean; onPress: () => void }) {
+  const scale = useSharedValue(1);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    color: withTiming(isActive ? Colors.amber : Colors.text3, { duration: 200 }),
+    transform: [{ scale: withSpring(isActive ? 1.15 : 1, SPRING_CONFIG) }],
+  }));
+
+  const labelStyle = useAnimatedStyle(() => ({
+    color: withTiming(isActive ? Colors.text1 : Colors.text3, { duration: 200 }),
+    opacity: withTiming(isActive ? 1 : 0.7, { duration: 200 }),
+  }));
+
+  const handlePress = useCallback(() => {
+    scale.value = withSpring(0.9, { stiffness: 400, damping: 15 }, () => {
+      scale.value = withSpring(1, SPRING_CONFIG);
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }, [onPress]);
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      style={styles.tabButton}
+      activeOpacity={1}
+    >
+      <Animated.View style={[styles.tabInner, animatedContainerStyle]}>
+        <Animated.Text style={[styles.tabIcon, iconStyle]}>
+          {tab.icon}
+        </Animated.Text>
+        <Animated.Text style={[styles.tabLabel, labelStyle]}>
+          {tab.label}
+        </Animated.Text>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
@@ -143,49 +159,57 @@ const styles = StyleSheet.create({
     position:    'absolute',
     left:        20,
     right:       20,
-    zIndex:      100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation:   20,
+    zIndex:      1000,
   },
   blur: {
     borderRadius: Radii.pill,
     overflow:     'hidden',
-    borderWidth:  1,
-    borderColor:  Colors.border2,
+    borderWidth:  StyleSheet.hairlineWidth,
+    borderColor:  'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(20, 20, 20, 0.4)',
+  },
+  highlight: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 1,
   },
   inner: {
     flexDirection:  'row',
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 8,
+    position: 'relative',
+  },
+  marker: {
+    position: 'absolute',
+    top: 6,
+    bottom: 6,
+    left: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: Radii.lg,
+    zIndex: -1,
   },
   tabButton: {
     flex:           1,
+    height:        44,
     alignItems:     'center',
     justifyContent: 'center',
   },
   tabInner: {
     alignItems:     'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    gap:            2,
+    gap:            1,
   },
   tabIcon: {
-    fontSize:   20,
-    lineHeight: 24,
+    fontSize:   18,
+    lineHeight: 22,
   },
   tabLabel: {
     fontSize:      10,
-    fontWeight:    '500',
-    letterSpacing: 0.3,
-  },
-  activeDot: {
-    width:        4,
-    height:       4,
-    borderRadius: 2,
-    backgroundColor: Colors.amber,
-    marginTop:    2,
+    fontWeight:    '600',
+    letterSpacing: 0.2,
   },
 });

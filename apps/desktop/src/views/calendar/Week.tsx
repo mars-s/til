@@ -10,18 +10,25 @@ import {
   startOfDay,
 } from "../../lib/dateUtils";
 import EventBlock from "../../components/EventBlock";
-import { type CalendarEvent } from "../../lib/invoke";
+import TaskBlock from "../../components/TaskBlock";
+import { type CalendarEvent, type Task } from "../../lib/invoke";
 
 const HOUR_HEIGHT = 56; // px per hour
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 interface WeekViewProps {
   events: CalendarEvent[];
+  tasks: Task[];
   onDayClick?: (date: Date) => void;
+  onTaskSchedule?: (taskId: string, scheduledAt: string) => void;
+  onEventCreate?: (title: string, startAt: string, endAt: string) => void;
 }
 
-export default function WeekView({ events, onDayClick }: WeekViewProps) {
+export default function WeekView({ events, tasks, onDayClick, onTaskSchedule, onEventCreate }: WeekViewProps) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+  const [dragCreate, setDragCreate] = useState<{ day: Date; startHour: number; endHour: number } | null>(null);
+  const [mouseDownPos, setMouseDownPos] = useState<{ dayIndex: number; y: number } | null>(null);
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -54,6 +61,11 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
     [events],
   );
 
+  const tasksForDay = useCallback(
+    (day: Date) => tasks.filter((t) => t.scheduled_at && isSameDay(parseISO(t.scheduled_at), day)),
+    [tasks],
+  );
+
   const weekLabel = `${format(days[0], "MMM d")} – ${format(days[6], "MMM d, yyyy")}`;
 
   return (
@@ -81,6 +93,15 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
             fontFamily: "var(--font-ui)",
             fontSize: 12,
             cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--ink-4)";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--smoke)";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-2)";
           }}
         >
           ← Prev
@@ -124,6 +145,15 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
               fontFamily: "var(--font-ui)",
               fontSize: 12,
               cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--ink-4)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--smoke)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-2)";
             }}
           >
             Next →
@@ -158,10 +188,11 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
             >
               <div
                 style={{
-                  fontFamily: "var(--font-ui)",
+                  fontFamily: "var(--font-display)",
                   fontSize: 11,
+                  fontStyle: "italic",
                   color: isToday ? "var(--amber)" : "var(--text-3)",
-                  letterSpacing: "0.05em",
+                  letterSpacing: "0.03em",
                   textTransform: "uppercase",
                   marginBottom: 4,
                 }}
@@ -192,7 +223,34 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
       </div>
 
       {/* Scrollable time grid */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+      <div
+        style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+        onMouseMove={(e) => {
+          if (!mouseDownPos || !dragCreate || !onEventCreate) return;
+          const grid = e.currentTarget;
+          const rect = grid.getBoundingClientRect();
+          const scrollTop = grid.scrollTop;
+          const y = e.clientY - rect.top + scrollTop;
+          const currentHour = Math.floor(y / HOUR_HEIGHT);
+          const newEndHour = Math.max(dragCreate.startHour + 1, currentHour + 1);
+          setDragCreate((prev) => prev ? { ...prev, endHour: newEndHour } : null);
+        }}
+        onMouseUp={(_e) => {
+          if (!dragCreate || !onEventCreate) {
+            setMouseDownPos(null);
+            setDragCreate(null);
+            return;
+          }
+          const title = `New Event`;
+          const startDate = new Date(dragCreate.day);
+          startDate.setHours(dragCreate.startHour, 0, 0, 0);
+          const endDate = new Date(dragCreate.day);
+          endDate.setHours(dragCreate.endHour, 0, 0, 0);
+          onEventCreate(title, startDate.toISOString(), endDate.toISOString());
+          setMouseDownPos(null);
+          setDragCreate(null);
+        }}
+      >
         <div
           style={{
             display: "grid",
@@ -224,7 +282,9 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
           {/* Day columns */}
           {days.map((day, di) => {
             const dayEvents = eventsForDay(day);
+            const dayTasks = tasksForDay(day);
             const isToday = isSameDay(day, today);
+            const isDragOver = dragOverDay === di;
             return (
               <div
                 key={di}
@@ -232,7 +292,38 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
                   position: "relative",
                   height: `${HOUR_HEIGHT * 24}px`,
                   borderLeft: "1px solid var(--border)",
-                  background: isToday ? "rgba(232,168,66,0.025)" : "transparent",
+                  background: isDragOver
+                    ? "rgba(232,168,66,0.15)"
+                    : isToday
+                      ? "rgba(232,168,66,0.025)"
+                      : "transparent",
+                  transition: "background 0.1s",
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverDay(di);
+                }}
+                onDragLeave={() => setDragOverDay(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const taskId = e.dataTransfer.getData("taskId");
+                  if (taskId && onTaskSchedule) {
+                    const y = e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top;
+                    const hour = Math.max(0, Math.min(23, Math.floor(y / HOUR_HEIGHT)));
+                    const newDate = new Date(day);
+                    newDate.setHours(hour, 0, 0, 0);
+                    onTaskSchedule(taskId, newDate.toISOString());
+                  }
+                  setDragOverDay(null);
+                }}
+                onMouseDown={(e) => {
+                  if (e.button !== 0) return;
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  const y = e.clientY - rect.top;
+                  const hour = Math.floor(y / HOUR_HEIGHT);
+                  setMouseDownPos({ dayIndex: di, y: e.clientY });
+                  setDragCreate({ day, startHour: hour, endHour: hour + 1 });
                 }}
               >
                 {/* Hour lines (horizontal only) */}
@@ -252,6 +343,23 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
                 {/* Current time indicator */}
                 {isToday && <CurrentTimeLine />}
 
+                {/* Drag-create preview */}
+                {dragCreate && isSameDay(dragCreate.day, day) && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 2,
+                      right: 2,
+                      top: dragCreate.startHour * HOUR_HEIGHT,
+                      height: (dragCreate.endHour - dragCreate.startHour) * HOUR_HEIGHT,
+                      background: "rgba(232,168,66,0.2)",
+                      border: "2px solid var(--amber)",
+                      borderRadius: 4,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+
                 {/* Events */}
                 {dayEvents.map((ev) => {
                   const { top, height } = eventPosition(ev);
@@ -261,6 +369,23 @@ export default function WeekView({ events, onDayClick }: WeekViewProps) {
                       event={ev}
                       top={top}
                       height={height}
+                    />
+                  );
+                })}
+
+                {/* Task blocks (scheduled tasks) */}
+                {dayTasks.map((task) => {
+                  const scheduledTime = task.scheduled_at ? parseISO(task.scheduled_at) : null;
+                  if (!scheduledTime) return null;
+                  const minutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
+                  const top = (minutes / 60) * HOUR_HEIGHT;
+                  const height = task.duration_minutes ? (task.duration_minutes / 60) * HOUR_HEIGHT : HOUR_HEIGHT;
+                  return (
+                    <TaskBlock
+                      key={task.id}
+                      task={task}
+                      top={top}
+                      height={Math.max(height, 24)}
                     />
                   );
                 })}
@@ -297,19 +422,21 @@ function CurrentTimeLine() {
           position: "absolute",
           left: 0,
           right: 0,
-          height: "1.5px",
-          background: "var(--rose)",
+          height: "2px",
+          background: "var(--amber)",
+          boxShadow: "0 0 8px rgba(232,168,66,0.6)",
         }}
       />
       <div
         style={{
           position: "absolute",
-          left: -3,
-          top: -3,
-          width: 7,
-          height: 7,
+          left: -4,
+          top: -4,
+          width: 10,
+          height: 10,
           borderRadius: "50%",
-          background: "var(--rose)",
+          background: "var(--amber)",
+          boxShadow: "0 0 12px rgba(232,168,66,0.8)",
         }}
       />
     </div>

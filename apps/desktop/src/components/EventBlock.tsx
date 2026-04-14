@@ -43,22 +43,28 @@ export default function EventBlock({
         overflow: "hidden",
         cursor: "pointer",
         userSelect: "none",
-        background: isSuggestion ? "transparent" : `${color}28`,
-        border: isSuggestion ? `1.5px dashed ${color}` : `1px solid ${color}55`,
-        opacity: isSuggestion ? 0.7 : 1,
+        background: isSuggestion ? "transparent" : `${color}22`,
+        border: isSuggestion ? `1.5px dashed ${color}` : `1px solid ${color}40`,
+        opacity: isSuggestion ? 0.75 : 1,
         padding: "3px 7px",
-        transition: "opacity 0.12s, box-shadow 0.12s",
+        transition: "all 0.15s ease",
         ...style,
       }}
       onClick={() => onClick?.(event)}
       title={event.title}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.opacity = "1";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--shadow-sm)";
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.opacity = "1";
+        el.style.boxShadow = "var(--shadow-sm)";
+        el.style.borderColor = isSuggestion ? color : `${color}70`;
+        el.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.opacity = isSuggestion ? "0.7" : "1";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.opacity = isSuggestion ? "0.75" : "1";
+        el.style.boxShadow = "none";
+        el.style.borderColor = isSuggestion ? color : `${color}40`;
+        el.style.transform = "translateY(0)";
       }}
     >
       <div
@@ -80,11 +86,11 @@ export default function EventBlock({
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 10,
-            color,
-            opacity: 0.65,
+            color: "var(--text-2)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            fontWeight: 400,
           }}
         >
           {formatTime(event.start_at)} – {formatTime(event.end_at)}

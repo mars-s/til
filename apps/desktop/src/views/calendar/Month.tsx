@@ -9,14 +9,15 @@ import {
   parseISO,
   format,
 } from "../../lib/dateUtils";
-import { type CalendarEvent } from "../../lib/invoke";
+import { type CalendarEvent, type Task } from "../../lib/invoke";
 
 interface MonthViewProps {
   events: CalendarEvent[];
+  tasks: Task[];
   onDayClick?: (date: Date) => void;
 }
 
-export default function MonthView({ events, onDayClick }: MonthViewProps) {
+export default function MonthView({ events, tasks, onDayClick }: MonthViewProps) {
   const [current, setCurrent] = useState(() => new Date());
   const today = new Date();
 
@@ -24,6 +25,9 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
 
   const eventsOnDay = (day: Date) =>
     events.filter((ev) => isSameDay(parseISO(ev.start_at), day));
+
+  const tasksOnDay = (day: Date) =>
+    tasks.filter((t) => t.scheduled_at && isSameDay(parseISO(t.scheduled_at), day));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -52,6 +56,15 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
             fontFamily: "var(--font-ui)",
             fontSize: 12,
             cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--ink-4)";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--smoke)";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-2)";
           }}
         >
           ← Prev
@@ -160,16 +173,16 @@ export default function MonthView({ events, onDayClick }: MonthViewProps) {
                     cursor: "pointer",
                     borderRight: di < 6 ? "1px solid var(--border)" : undefined,
                     borderBottom: wi < 5 ? "1px solid var(--border)" : undefined,
-                    background: isToday ? "rgba(232,168,66,0.03)" : "transparent",
+                    background: isToday ? "rgba(232,168,66,0.04)" : "transparent",
                     minHeight: 72,
-                    transition: "background 0.12s",
+                    transition: "background 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
                     if (!isToday) (e.currentTarget as HTMLDivElement).style.background = "var(--ink-3)";
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLDivElement).style.background = isToday
-                      ? "rgba(232,168,66,0.03)"
+                      ? "rgba(232,168,66,0.04)"
                       : "transparent";
                   }}
                 >

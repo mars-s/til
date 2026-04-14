@@ -10,6 +10,8 @@ const PRIORITY_COLORS: Record<Priority, string> = {
 interface CalendarSidebarProps {
   unscheduledTasks: Task[];
   onTaskClick: (task: Task) => void;
+  onTaskDragStart?: (taskId: string) => void;
+  calendars: { id: string; name: string; color: string }[];
 }
 
 const CALENDARS = [
@@ -18,7 +20,7 @@ const CALENDARS = [
   { name: "Work", color: "var(--sky)" },
 ];
 
-export default function CalendarSidebar({ unscheduledTasks, onTaskClick }: CalendarSidebarProps) {
+export default function CalendarSidebar({ unscheduledTasks, onTaskClick, onTaskDragStart, calendars = CALENDARS }: CalendarSidebarProps) {
   return (
     <div
       style={{
@@ -99,7 +101,13 @@ export default function CalendarSidebar({ unscheduledTasks, onTaskClick }: Calen
             unscheduledTasks.map((task) => (
               <button
                 key={task.id}
+                draggable
                 onClick={() => onTaskClick(task)}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("taskId", task.id);
+                  e.dataTransfer.effectAllowed = "move";
+                  onTaskDragStart?.(task.id);
+                }}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -109,7 +117,7 @@ export default function CalendarSidebar({ unscheduledTasks, onTaskClick }: Calen
                   borderRadius: "var(--r-sm)",
                   background: "transparent",
                   border: "none",
-                  cursor: "pointer",
+                  cursor: "grab",
                   textAlign: "left",
                   transition: "background 0.12s",
                 }}
@@ -186,9 +194,9 @@ export default function CalendarSidebar({ unscheduledTasks, onTaskClick }: Calen
 
         {/* Calendar list */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          {CALENDARS.map((cal) => (
+          {calendars.map((cal) => (
             <div
-              key={cal.name}
+              key={cal.id}
               style={{
                 display: "flex",
                 alignItems: "center",
